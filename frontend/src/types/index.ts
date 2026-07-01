@@ -1,0 +1,154 @@
+export interface LoginResponse {
+  token: string;
+  user: {
+    id: number;
+    usuario: string;
+    nombre: string;
+    apellido: string;
+    role: string;
+  };
+}
+
+export interface User {
+  id: number;
+  usuario: string;
+  nombre: string;
+  apellido: string;
+  role: string;
+}
+
+export interface Paciente {
+  id: number;
+  dni: string;
+  nombre: string;
+  apellido: string;
+  fechaNacimiento?: string;
+  departamento?: string;
+  puesto?: string;
+  fechaIngreso?: string;
+  alergias?: string;
+  contactoEmergencia?: string;
+  telefono?: string;
+  email?: string;
+  activo: boolean;
+  controles?: Control[];
+  recetas?: Receta[];
+  remisiones?: Remision[];
+}
+
+export interface Control {
+  id: number;
+  pacienteId: number;
+  enfermeraId: number;
+  fecha: string;
+  tipo: 'RUTINARIO' | 'URGENTE' | 'SEGUIMIENTO' | 'INGRESO' | 'PERIODICO';
+  presionSistolica?: number;
+  presionDiastolica?: number;
+  temperatura?: number;
+  pulso?: number;
+  saturacionO2?: number;
+  peso?: number;
+  talla?: number;
+  motivo?: string;
+  observaciones?: string;
+  paciente?: Paciente;
+  enfermera?: User;
+  recetas?: Receta[];
+  tratamientos?: Tratamiento[];
+}
+
+export interface Medicamento {
+  id: number;
+  nombre: string;
+  presentacion: string;
+  unidad: string;
+  descripcion?: string;
+  stock: number;
+  stockMinimo: number;
+  activo: boolean;
+}
+
+export interface Receta {
+  id: number;
+  pacienteId: number;
+  controlId?: number;
+  medicamentoId: number;
+  dosis: string;
+  frecuencia: string;
+  duracionDias: number;
+  fechaInicio: string;
+  fechaFin: string;
+  medico: string;
+  observaciones?: string;
+  paciente?: Paciente;
+  medicamento?: Medicamento;
+  control?: Control;
+}
+
+export interface Tratamiento {
+  id: number;
+  pacienteId: number;
+  controlId?: number;
+  medicamentoId: number;
+  dosis: string;
+  frecuencia: string;
+  duracionDias: number;
+  fechaInicio: string;
+  fechaFin: string;
+  observaciones?: string;
+  paciente?: Paciente;
+  medicamento?: Medicamento;
+  control?: Control;
+}
+
+export interface Remision {
+  id: number;
+  pacienteId: number;
+  tipo: 'ESPECIALISTA' | 'EPS' | 'INCAPACIDAD' | 'EXAMEN_EXTERNO' | 'OTRO';
+  destino: string;
+  motivo: string;
+  diagnostico?: string;
+  estado: 'PENDIENTE' | 'EN_CURSO' | 'FINALIZADO';
+  fechaRemision: string;
+  fechaRespuesta?: string;
+  observaciones?: string;
+  enfermeraId: number;
+  paciente?: Paciente;
+  enfermera?: User;
+}
+
+export interface EstadisticasResumen {
+  totalPacientes: number;
+  totalControles: number;
+  controlesPorTipo: { tipo: string; cantidad: number }[];
+  totalRecetas: number;
+  totalRemisiones: number;
+  remisionesPorEstado: { estado: string; cantidad: number }[];
+  topPaciente?: Paciente;
+  topMedicamento?: Medicamento;
+}
+
+export interface ControlesPorMes {
+  mes: string;
+  mesNumero: number;
+  cantidad: number;
+}
+
+export interface PresionPromedio {
+  promedioSistolica: number;
+  promedioDiastolica: number;
+  promedioTemperatura: string;
+  promedioPulso: number;
+  promedioSaturacion: number;
+}
+
+export interface Enfermera {
+  id: number;
+  usuario: string;
+  nombre: string;
+  apellido: string;
+  matricula: string;
+  turno: string;
+  activo: boolean;
+  role?: { id: number; nombre: string };
+}

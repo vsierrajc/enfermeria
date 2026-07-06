@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -99,18 +100,17 @@ export class EstadisticasService {
   }
 
   async getControlesPorMes(anio?: number) {
-    const year = anio || new Date().getFullYear();
+    const parsed = Number(anio);
+    const year = Number.isInteger(parsed) ? parsed : new Date().getFullYear();
 
-    const controles = await this.prisma.$queryRawUnsafe<any[]>(
-      `SELECT
+    const controles = await this.prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT
         MONTH(fecha) as mes,
         COUNT(*) as cantidad
       FROM controles
-      WHERE YEAR(fecha) = ?
+      WHERE YEAR(fecha) = ${year}
       GROUP BY MONTH(fecha)
-      ORDER BY mes`,
-      year,
-    );
+      ORDER BY mes`);
 
     const meses = [
       'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',

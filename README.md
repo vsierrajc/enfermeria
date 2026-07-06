@@ -94,30 +94,44 @@ Los servicios quedan disponibles en:
 | Swagger Docs | http://localhost:3001/api/docs |
 | MySQL | localhost:3306 |
 
-### Credenciales por defecto
+### Credenciales iniciales
+
+En el primer arranque se crea **solo** el usuario administrador. Su contraseña se toma
+de `ADMIN_INITIAL_PASSWORD` (por defecto `admin` si no se define, con una advertencia en el log).
 
 | Usuario | Contraseña | Rol |
 |---------|------------|-----|
-| `admin` | `admin` | ADMINISTRADOR |
-| `enfermera1` | `password` | ENFERMERA |
-| `auditor` | `password` | CONSULTA |
+| `admin` | `$ADMIN_INITIAL_PASSWORD` | ADMINISTRADOR |
 
-> Los datos se.seedean automáticamente al iniciar por primera vez.
+> **Cambie la contraseña del admin inmediatamente** tras el primer login con
+> `POST /api/auth/change-password`.
+>
+> Los usuarios de demostración (`enfermera1`, `enfermera2`, `auditor`) y los datos
+> de ejemplo **solo se crean cuando `NODE_ENV` ≠ `production`**.
 
 ### Variables de entorno
 
 Archivo `.env`:
 
 ```env
-DB_ROOT_PASSWORD=root_password
+DB_ROOT_PASSWORD=cambie_este_password_root
 DB_NAME=enfermeria_db
-DB_USER=enfermera_user
-DB_PASSWORD=enfermera_password
+DB_USER=enfermeria_user
+DB_PASSWORD=cambie_este_password
 DB_PORT=3306
-JWT_SECRET=supersecretjwtkey2024
+
+# Aleatorio y con 32+ caracteres. Genérelo con: openssl rand -hex 32
+JWT_SECRET=reemplace_por_un_secreto_aleatorio_de_32_o_mas_caracteres
+
+# Contraseña inicial del admin (cámbiela tras el primer login)
+ADMIN_INITIAL_PASSWORD=cambie_esta_clave_admin
+
+FRONTEND_URL=http://localhost:3000
 BACKEND_PORT=3001
 FRONTEND_PORT=3000
 ```
+
+> El backend **no arranca** si `JWT_SECRET` tiene menos de 32 caracteres.
 
 ## API REST
 

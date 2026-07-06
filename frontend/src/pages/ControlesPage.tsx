@@ -2,18 +2,14 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { controlesService } from '../api/controles.service';
 import { pacientesService } from '../api/pacientes.service';
-import { enfermerasService } from '../api/enfermeras.service';
-import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDateTime } from '../utils/pdf';
-import type { Control, Paciente, Enfermera } from '../types';
+import type { Control, Paciente } from '../types';
 
 const ControlesPage: React.FC = () => {
   const [controles, setControles] = useState<Control[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [enfermeras, setEnfermeras] = useState<Enfermera[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const { user } = useAuth();
 
   const [filters, setFilters] = useState({ pacienteId: '', desde: '', hasta: '', tipo: '' });
   const [formData, setFormData] = useState({
@@ -26,14 +22,12 @@ const ControlesPage: React.FC = () => {
 
   const loadAll = async () => {
     try {
-      const [c, p, e] = await Promise.all([
+      const [c, p] = await Promise.all([
         controlesService.findAll(),
         pacientesService.findAll(),
-        enfermerasService.findAll(),
       ]);
       setControles(c);
       setPacientes(p);
-      setEnfermeras(e);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally { setLoading(false); }
@@ -56,7 +50,6 @@ const ControlesPage: React.FC = () => {
     try {
       const payload: any = {
         pacienteId: Number(formData.pacienteId),
-        enfermeraId: user?.id,
         fecha: formData.fecha,
         tipo: formData.tipo,
       };

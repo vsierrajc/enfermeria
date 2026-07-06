@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TipoControl } from '@prisma/client';
 import { CreateControlDto, UpdateControlDto } from './dto/control.dto';
+import { safeUserSelect } from '../common/prisma/user-select';
 
 @Injectable()
 export class ControlesService {
@@ -34,7 +35,7 @@ export class ControlesService {
       orderBy: { fecha: 'desc' },
       include: {
         paciente: true,
-        enfermera: { include: { role: true } },
+        enfermera: { select: safeUserSelect },
       },
     });
   }
@@ -44,7 +45,7 @@ export class ControlesService {
       where: { id },
       include: {
         paciente: true,
-        enfermera: { include: { role: true } },
+        enfermera: { select: safeUserSelect },
         recetas: { include: { medicamento: true } },
         tratamientos: { include: { medicamento: true } },
       },
@@ -57,11 +58,11 @@ export class ControlesService {
     return control;
   }
 
-  async create(dto: CreateControlDto) {
+  async create(dto: CreateControlDto, enfermeraId: number) {
     return this.prisma.control.create({
       data: {
         pacienteId: dto.pacienteId,
-        enfermeraId: dto.enfermeraId,
+        enfermeraId,
         fecha: new Date(dto.fecha),
         tipo: dto.tipo as TipoControl,
         presionSistolica: dto.presionSistolica,
@@ -76,7 +77,7 @@ export class ControlesService {
       },
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
   }
@@ -92,7 +93,7 @@ export class ControlesService {
       data,
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
   }

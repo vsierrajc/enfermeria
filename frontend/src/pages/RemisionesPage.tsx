@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { remisionesService } from '../api/remisiones.service';
 import { pacientesService } from '../api/pacientes.service';
-import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDate } from '../utils/pdf';
 import type { Remision, Paciente } from '../types';
 
@@ -11,7 +10,6 @@ const RemisionesPage: React.FC = () => {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const { user } = useAuth();
 
   const [filters, setFilters] = useState({ estado: '', desde: '', hasta: '' });
   const [formData, setFormData] = useState({
@@ -50,7 +48,6 @@ const RemisionesPage: React.FC = () => {
         motivo: formData.motivo,
         diagnostico: formData.diagnostico || undefined,
         fechaRemision: formData.fechaRemision,
-        enfermeraId: user?.id,
         observaciones: formData.observaciones || undefined,
       });
       toast.success('Remisión creada');

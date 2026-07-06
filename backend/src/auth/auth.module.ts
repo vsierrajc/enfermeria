@@ -11,10 +11,19 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret || secret.length < 32) {
+          throw new Error(
+            'JWT_SECRET no está definido o es demasiado corto (mínimo 32 caracteres). ' +
+              'Configure un secreto aleatorio y único por entorno.',
+          );
+        }
+        return {
+          secret,
+          signOptions: { expiresIn: '1h' },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

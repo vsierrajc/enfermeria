@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Controles')
 @ApiBearerAuth()
@@ -54,8 +55,8 @@ export class ControlesController {
   @Post()
   @Roles(Role.ADMINISTRADOR, Role.ENFERMERA)
   @ApiOperation({ summary: 'Crear control' })
-  create(@Body() dto: CreateControlDto) {
-    return this.controlesService.create(dto);
+  create(@Body() dto: CreateControlDto, @CurrentUser() user: { id: number }) {
+    return this.controlesService.create(dto, user.id);
   }
 
   @Put(':id')

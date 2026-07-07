@@ -8,7 +8,7 @@ Sistema web completo para la gestión y control de enfermería en entornos hospi
 |------|------------|
 | **Frontend** | React 18, TypeScript, React Router v6, Chart.js |
 | **Backend** | NestJS, Prisma ORM, class-validator, Swagger |
-| **Base de datos** | MySQL 8.0 |
+| **Base de datos** | PostgreSQL 16 |
 | **Infraestructura** | Docker Compose (3 servicios) |
 
 ## Funcionalidades
@@ -92,7 +92,7 @@ Los servicios quedan disponibles en:
 | Frontend | http://localhost:3000 |
 | Backend API | http://localhost:3001 |
 | Swagger Docs | http://localhost:3001/api/docs |
-| MySQL | localhost:3306 |
+| PostgreSQL | localhost:5432 |
 
 ### Credenciales iniciales
 
@@ -114,11 +114,10 @@ de `ADMIN_INITIAL_PASSWORD` (por defecto `admin` si no se define, con una advert
 Archivo `.env`:
 
 ```env
-DB_ROOT_PASSWORD=cambie_este_password_root
 DB_NAME=enfermeria_db
 DB_USER=enfermeria_user
 DB_PASSWORD=cambie_este_password
-DB_PORT=3306
+DB_PORT=5432
 
 # Aleatorio y con 32+ caracteres. Genérelo con: openssl rand -hex 32
 JWT_SECRET=reemplace_por_un_secreto_aleatorio_de_32_o_mas_caracteres

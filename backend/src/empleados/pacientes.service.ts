@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePacienteDto, UpdatePacienteDto } from './dto/paciente.dto';
+import { safeUserSelect } from '../common/prisma/user-select';
 
 @Injectable()
 export class PacientesService {
@@ -39,7 +40,7 @@ export class PacientesService {
       include: {
         controles: {
           orderBy: { fecha: 'desc' },
-          include: { enfermera: { include: { role: true } } },
+          include: { enfermera: { select: safeUserSelect } },
         },
         recetas: {
           orderBy: { fechaInicio: 'desc' },
@@ -47,7 +48,7 @@ export class PacientesService {
         },
         remisiones: {
           orderBy: { fechaRemision: 'desc' },
-          include: { enfermera: true },
+          include: { enfermera: { select: safeUserSelect } },
         },
       },
     });

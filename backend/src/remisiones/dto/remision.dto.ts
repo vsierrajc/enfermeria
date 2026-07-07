@@ -33,10 +33,6 @@ export class CreateRemisionDto {
   @IsString()
   fechaRemision: string;
 
-  @ApiProperty()
-  @IsNumber()
-  enfermeraId: number;
-
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(toUndefinedIfEmpty)

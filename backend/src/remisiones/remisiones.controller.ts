@@ -9,6 +9,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Remisiones')
 @ApiBearerAuth()
@@ -44,8 +45,8 @@ export class RemisionesController {
   @Post()
   @Roles(Role.ADMINISTRADOR, Role.ENFERMERA)
   @ApiOperation({ summary: 'Crear remisión' })
-  create(@Body() dto: CreateRemisionDto) {
-    return this.remisionesService.create(dto);
+  create(@Body() dto: CreateRemisionDto, @CurrentUser() user: { id: number }) {
+    return this.remisionesService.create(dto, user.id);
   }
 
   @Put(':id')

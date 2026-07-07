@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TipoRemision, EstadoRemision } from '@prisma/client';
 import { CreateRemisionDto, UpdateRemisionDto } from './dto/remision.dto';
+import { safeUserSelect } from '../common/prisma/user-select';
 
 @Injectable()
 export class RemisionesService {
@@ -29,7 +30,7 @@ export class RemisionesService {
       orderBy: { fechaRemision: 'desc' },
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
   }
@@ -39,7 +40,7 @@ export class RemisionesService {
       where: { id },
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
 
@@ -50,7 +51,7 @@ export class RemisionesService {
     return remision;
   }
 
-  async create(dto: CreateRemisionDto) {
+  async create(dto: CreateRemisionDto, enfermeraId: number) {
     return this.prisma.remision.create({
       data: {
         pacienteId: dto.pacienteId,
@@ -60,12 +61,12 @@ export class RemisionesService {
         diagnostico: dto.diagnostico,
         estado: EstadoRemision.PENDIENTE,
         fechaRemision: new Date(dto.fechaRemision),
-        enfermeraId: dto.enfermeraId,
+        enfermeraId,
         observaciones: dto.observaciones,
       },
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
   }
@@ -84,7 +85,7 @@ export class RemisionesService {
       data,
       include: {
         paciente: true,
-        enfermera: true,
+        enfermera: { select: safeUserSelect },
       },
     });
   }

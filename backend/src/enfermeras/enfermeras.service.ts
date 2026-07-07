@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEnfermeraDto } from './dto/enfermera.dto';
+import { safeUserSelect } from '../common/prisma/user-select';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -9,7 +10,7 @@ export class EnfermerasService {
 
   async findAll() {
     return this.prisma.user.findMany({
-      include: { role: true },
+      select: safeUserSelect,
       orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
     });
   }
@@ -17,7 +18,7 @@ export class EnfermerasService {
   async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { role: true },
+      select: safeUserSelect,
     });
 
     if (!user) {
@@ -40,7 +41,7 @@ export class EnfermerasService {
         turno: dto.turno as any,
         roleId: dto.roleId || 2,
       },
-      include: { role: true },
+      select: safeUserSelect,
     });
   }
 }

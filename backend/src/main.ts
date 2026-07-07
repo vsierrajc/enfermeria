@@ -5,23 +5,40 @@ import { AppModule } from './app.module';
 import { PrismaService } from './prisma/prisma.service';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import helmet from 'helmet';
 import * as bcrypt from 'bcryptjs';
 
 async function seedDatabase(prisma: PrismaService) {
   const userCount = await prisma.user.count();
   if (userCount > 0) return;
 
+  const isProduction = process.env.NODE_ENV === 'production';
   console.log('Seeding database...');
 
+  // Los roles siempre deben existir.
   await prisma.roleEntity.upsert({ where: { id: 1 }, update: {}, create: { id: 1, nombre: 'ADMINISTRADOR' } });
   await prisma.roleEntity.upsert({ where: { id: 2 }, update: {}, create: { id: 2, nombre: 'ENFERMERA' } });
   await prisma.roleEntity.upsert({ where: { id: 3 }, update: {}, create: { id: 3, nombre: 'CONSULTA' } });
 
-  const adminHash = await bcrypt.hash('admin', 10);
+  // Usuario administrador inicial. La contraseña se toma de ADMIN_INITIAL_PASSWORD.
+  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'admin';
+  if (adminPassword === 'admin') {
+    console.warn(
+      '\n[SEGURIDAD] Se está creando el admin con la contraseña por defecto "admin". ' +
+        'Defina ADMIN_INITIAL_PASSWORD y cámbiela tras el primer login.\n',
+    );
+  }
+  const adminHash = await bcrypt.hash(adminPassword, 10);
   await prisma.user.upsert({
     where: { usuario: 'admin' }, update: {},
     create: { usuario: 'admin', passwordHash: adminHash, nombre: 'Admin', apellido: 'User', matricula: 'ADM123', turno: 'MANANA', roleId: 1 },
   });
+
+  // Datos de demostración: solo fuera de producción.
+  if (isProduction) {
+    console.log('Producción: se omiten enfermeras/pacientes/medicamentos de demostración.');
+    return;
+  }
 
   const nurseHash = await bcrypt.hash('password', 10);
   await prisma.user.upsert({
@@ -65,6 +82,8 @@ async function bootstrap() {
   await seedDatabase(prisma);
 
   app.setGlobalPrefix('api');
+
+  app.use(helmet());
 
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',

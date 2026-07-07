@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, MinLength, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateEnfermeraDto {
@@ -7,9 +7,12 @@ export class CreateEnfermeraDto {
   @IsNotEmpty()
   usuario: string;
 
-  @ApiProperty({ example: 'password123' })
+  @ApiProperty({ example: 'Password2024' })
   @IsString()
-  @IsNotEmpty()
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'La contraseña debe incluir al menos una letra y un número',
+  })
   password: string;
 
   @ApiProperty({ example: 'Ana' })

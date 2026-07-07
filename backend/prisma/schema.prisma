@@ -190,6 +190,21 @@ model Tratamiento {
   @@map("tratamientos")
 }
 
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  usuario    String?  @db.VarChar(255)
+  rol        String?  @db.VarChar(50)
+  metodo     String   @db.VarChar(10)
+  ruta       String   @db.VarChar(500)
+  statusCode Int      @map("status_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId], map: "idx_audit_user")
+  @@index([createdAt], map: "idx_audit_fecha")
+  @@map("audit_logs")
+}
+
 model Remision {
   id              Int           @id @default(autoincrement())
   pacienteId      Int           @map("paciente_id")

@@ -9,7 +9,6 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-ENV TSC_COMPILE_ON_ERROR=true
 RUN npm run build
 
 # Stage 2: Serve with nginx

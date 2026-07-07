@@ -1,0 +1,41 @@
+# docker-compose para despliegue REMOTO (Portainer) usando imagenes ya
+# publicadas en Docker Hub. Construye y sube con:
+#   .\scripts\build-and-push-dockerhub.ps1 v1.0.0
+# Luego en Portainer: Stacks -> Add stack -> pega este archivo y define las
+# variables de entorno (ver .env.remote.example).
+#
+# La base de datos es un PostgreSQL EXTERNO (192.168.1.49); no se levanta aqui.
+# El frontend (nginx) hace proxy de /api al backend, por lo que el backend no
+# se expone publicamente: solo el puerto del frontend es accesible.
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME:-cieth}/historiaclinica-backend:${IMAGE_TAG:-latest}
+    container_name: enfermeria-backend
+    restart: unless-stopped
+    # Sin puertos publicados: el backend solo es accesible dentro de la red
+    # interna, via el proxy /api de nginx en el frontend.
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST:-192.168.1.49}:${DB_PORT:-5432}/${DB_NAME}?schema=${DB_SCHEMA:-historiaclinica}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-admin}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
+    networks:
+      - enfermeria-net
+
+  frontend:
+    image: ${DOCKER_USERNAME:-cieth}/historiaclinica-frontend:${IMAGE_TAG:-latest}
+    container_name: enfermeria-frontend
+    restart: unless-stopped
+    ports:
+      - '${FRONTEND_PORT:-8080}:3000'
+    depends_on:
+      - backend
+    networks:
+      - enfermeria-net
+
+networks:
+  enfermeria-net:
+    driver: bridge

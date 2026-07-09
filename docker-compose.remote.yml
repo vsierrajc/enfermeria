@@ -18,7 +18,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST:-192.168.1.49}:${DB_PORT:-5432}/${DB_NAME}?schema=${DB_SCHEMA:-historiaclinica}
+      # No se define PRISMA_DB_PUSH: en produccion el esquema se crea a mano
+      # con scripts/sql/01-schema.sql. El contenedor NO ejecuta prisma db push.
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST:-192.168.1.49}:${DB_PORT:-5432}/${DB_NAME:-enfermeria}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-admin}
       # Con el proxy /api de nginx las peticiones son same-origin, por lo que

@@ -110,3 +110,18 @@ Con privilegios suficientes, `prisma db push` crea el esquema si no existe.
    admin inicial en el esquema dedicado.
 3. Login y operaciones CRUD funcionan igual que con MySQL.
 4. No quedan referencias a MySQL en el repo (schema, composes, envs, Dockerfile).
+
+## Actualización 2026-07-09 — base de datos dedicada, sin Prisma en producción
+
+Tras la migración, se ajustó el enfoque de despliegue (registro histórico; el
+diseño original arriba usaba un *esquema* dedicado dentro de una BD compartida):
+
+- **Base de datos dedicada `enfermeria`** en el servidor `192.168.1.49`, con el
+  esquema estándar **`public`** (la BD ya está aislada; se eliminó el esquema
+  dedicado `historiaclinica` y el `?schema=` de las cadenas de conexión).
+- **Sin Prisma en producción:** el contenedor del backend ya no ejecuta
+  `prisma db push` al arrancar (gated por `PRISMA_DB_PUSH`, solo `true` en dev).
+  El esquema se crea manualmente con `scripts/sql/00-create-database.sql`,
+  `01-schema.sql` y `02-seed.sql` (ver `scripts/sql/README.md`).
+- El seed de la app en el arranque (roles + admin vía Prisma Client) sigue
+  siendo idempotente y respeta datos ya creados manualmente.

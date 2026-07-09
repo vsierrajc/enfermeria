@@ -27,12 +27,15 @@ services:
     ports:
       - '${BACKEND_PORT:-3001}:3001'
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=historiaclinica
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-admin}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3001
+      # Solo en dev: crea/actualiza el esquema con `prisma db push` al arrancar.
+      # En producción esto NO se define y el esquema se crea con scripts/sql/.
+      PRISMA_DB_PUSH: 'true'
     depends_on:
       db:
         condition: service_healthy

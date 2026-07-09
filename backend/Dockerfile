@@ -30,4 +30,8 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/src/main.js"]
+# En producción el esquema se crea MANUALMENTE con scripts/sql/01-schema.sql,
+# por lo que NO se ejecuta `prisma db push` al arrancar. Solo corre si
+# PRISMA_DB_PUSH=true (útil en desarrollo local). Nota: el arranque de la app
+# igual asegura roles + admin de forma idempotente vía Prisma Client (runtime).
+CMD ["sh", "-c", "if [ \"$PRISMA_DB_PUSH\" = \"true\" ]; then npx prisma db push --skip-generate; fi; exec node dist/src/main.js"]

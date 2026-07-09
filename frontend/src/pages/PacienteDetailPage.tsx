@@ -27,7 +27,12 @@ import { PatientHeader } from '../components/patient/PatientHeader';
 import { AllergyBanner } from '../components/patient/AllergyBanner';
 import { VitalsStrip } from '../components/patient/VitalsStrip';
 import { ActivityTimeline } from '../components/patient/ActivityTimeline';
+import { NuevoControlModal } from '../components/patient/NuevoControlModal';
+import { NuevaRecetaModal } from '../components/patient/NuevaRecetaModal';
+import { NuevaRemisionModal } from '../components/patient/NuevaRemisionModal';
 import type { Paciente } from '../types';
+
+type ModalKind = 'control' | 'receta' | 'remision' | null;
 
 const tipoControlTone: Record<string, 'accent' | 'crit' | 'warn' | 'ok' | 'neutral'> = {
   RUTINARIO: 'accent',
@@ -51,6 +56,7 @@ const PacienteDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState('resumen');
+  const [open, setOpen] = useState<ModalKind>(null);
 
   const loadPaciente = useCallback(async () => {
     setLoading(true);
@@ -173,8 +179,6 @@ const PacienteDetailPage: React.FC = () => {
     );
   }
 
-  const disabledTitle = 'Disponible en la siguiente tarea';
-
   return (
     <div>
       <button
@@ -192,13 +196,13 @@ const PacienteDetailPage: React.FC = () => {
       <VitalsStrip controles={paciente.controles} themeKey={theme} />
 
       <div className="mb-6 flex flex-wrap gap-2">
-        <Button variant="primary" disabled title={disabledTitle}>
+        <Button variant="primary" onClick={() => setOpen('control')}>
           <Plus size={16} /> Registrar signos vitales
         </Button>
-        <Button disabled title={disabledTitle}>
+        <Button onClick={() => setOpen('receta')}>
           <Stethoscope size={16} /> Formular receta
         </Button>
-        <Button disabled title={disabledTitle}>
+        <Button onClick={() => setOpen('remision')}>
           <Send size={16} /> Remitir
         </Button>
         <Button variant="ghost" className="ml-auto" onClick={generateHistoriaClinica}>
@@ -264,6 +268,11 @@ const PacienteDetailPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value="controles">
+          <div className="mb-3 flex justify-end">
+            <Button size="sm" onClick={() => setOpen('control')}>
+              <Plus size={15} /> Nuevo control
+            </Button>
+          </div>
           <Card>
             {!paciente.controles || paciente.controles.length === 0 ? (
               <EmptyState icon={Stethoscope} title="Sin controles registrados" />
@@ -305,6 +314,11 @@ const PacienteDetailPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value="recetas">
+          <div className="mb-3 flex justify-end">
+            <Button size="sm" onClick={() => setOpen('receta')}>
+              <Plus size={15} /> Nueva receta
+            </Button>
+          </div>
           <Card>
             {!paciente.recetas || paciente.recetas.length === 0 ? (
               <EmptyState icon={Stethoscope} title="Sin recetas registradas" />
@@ -342,6 +356,11 @@ const PacienteDetailPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value="remisiones">
+          <div className="mb-3 flex justify-end">
+            <Button size="sm" onClick={() => setOpen('remision')}>
+              <Plus size={15} /> Nueva remisión
+            </Button>
+          </div>
           <Card>
             {!paciente.remisiones || paciente.remisiones.length === 0 ? (
               <EmptyState icon={Send} title="Sin remisiones registradas" />
@@ -376,6 +395,25 @@ const PacienteDetailPage: React.FC = () => {
           </Card>
         </TabPanel>
       </Tabs>
+
+      <NuevoControlModal
+        open={open === 'control'}
+        pacienteId={paciente.id}
+        onOpenChange={(o) => setOpen(o ? 'control' : null)}
+        onCreated={loadPaciente}
+      />
+      <NuevaRecetaModal
+        open={open === 'receta'}
+        pacienteId={paciente.id}
+        onOpenChange={(o) => setOpen(o ? 'receta' : null)}
+        onCreated={loadPaciente}
+      />
+      <NuevaRemisionModal
+        open={open === 'remision'}
+        pacienteId={paciente.id}
+        onOpenChange={(o) => setOpen(o ? 'remision' : null)}
+        onCreated={loadPaciente}
+      />
     </div>
   );
 };

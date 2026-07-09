@@ -1,7 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import PacienteDetailPage from './PacienteDetailPage';
 import { pacientesService } from '../api/pacientes.service';
+import { AuthProvider } from '../hooks/useAuth';
 import type { Paciente } from '../types';
 
 vi.mock('../api/pacientes.service', () => ({
@@ -82,11 +84,13 @@ const paciente: Paciente = {
 
 function renderPage() {
   return render(
-    <MemoryRouter initialEntries={['/pacientes/1']}>
-      <Routes>
-        <Route path="/pacientes/:id" element={<PacienteDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/pacientes/1']}>
+        <Routes>
+          <Route path="/pacientes/:id" element={<PacienteDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
   );
 }
 
@@ -99,9 +103,20 @@ test('renderiza la ficha del paciente con cabecera, alergia, signos y tabs', asy
   expect(screen.getByText(/Alergia: Penicilina/)).toBeInTheDocument();
   expect(screen.getByText('128/84')).toBeInTheDocument();
   expect(screen.getByRole('tab', { name: /Controles/ })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: /Registrar signos vitales/ })).toBeDisabled();
+  expect(screen.getByRole('button', { name: /Registrar signos vitales/ })).toBeEnabled();
 
   await waitFor(() => expect(screen.getAllByText(/vs\. anterior/).length).toBeGreaterThan(0));
+});
+
+test('el botón de acción abre el modal con el paciente fijo', async () => {
+  vi.mocked(pacientesService.findOne).mockResolvedValue(paciente);
+
+  renderPage();
+
+  await screen.findByText('Juan Pérez');
+  await userEvent.click(screen.getByRole('button', { name: /Registrar signos vitales/ }));
+
+  expect(screen.getByRole('heading', { name: 'Registrar signos vitales' })).toBeInTheDocument();
 });
 
 test('muestra reintentar cuando falla la carga', async () => {

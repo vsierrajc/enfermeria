@@ -1,0 +1,12 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  html { font-feature-settings: "cv05","ss01"; }
+  body { @apply bg-bg text-text font-sans antialiased; }
+  .tnum { font-variant-numeric: tabular-nums; }
+}

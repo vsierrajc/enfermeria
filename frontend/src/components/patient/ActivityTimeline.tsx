@@ -1,5 +1,6 @@
 import { Activity, Send, Stethoscope } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { EmptyState } from '../../ui/EmptyState';
@@ -13,7 +14,7 @@ type Item = {
   key: string;
   icon: LucideIcon;
   tone: 'accent' | 'ok' | 'warn';
-  title: string;
+  title: ReactNode;
   subtitle: string;
   fecha: string;
 };
@@ -34,15 +35,23 @@ export function ActivityTimeline({ paciente }: Props) {
   const items: Item[] = [];
 
   for (const c of paciente.controles ?? []) {
-    const partes = [
-      c.presionSistolica && c.presionDiastolica ? `PA ${c.presionSistolica}/${c.presionDiastolica}` : null,
-      c.pulso ? `FC ${c.pulso}` : null,
-    ].filter(Boolean);
+    const partes: string[] = [];
+    if (c.presionSistolica && c.presionDiastolica) partes.push(`PA ${c.presionSistolica}/${c.presionDiastolica}`);
+    if (c.pulso) partes.push(`FC ${c.pulso}`);
     items.push({
       key: `control-${c.id}`,
       icon: Activity,
       tone: 'accent',
-      title: `Control ${c.tipo.toLowerCase()}${partes.length ? `: ${partes.join(', ')}` : ''}`,
+      title: (
+        <>
+          Control {c.tipo.toLowerCase()}
+          {partes.length > 0 && (
+            <>
+              : <span className="tabular-nums">{partes.join(', ')}</span>
+            </>
+          )}
+        </>
+      ),
       subtitle: [c.enfermera?.nombre && `Enf. ${c.enfermera.nombre} ${c.enfermera.apellido ?? ''}`.trim(), c.motivo]
         .filter(Boolean)
         .join(' · '),
@@ -55,7 +64,14 @@ export function ActivityTimeline({ paciente }: Props) {
       key: `receta-${r.id}`,
       icon: Stethoscope,
       tone: 'ok',
-      title: `Receta: ${r.medicamento?.nombre ?? 'Medicamento'} ${r.dosis} · ${r.frecuencia}`,
+      title: (
+        <>
+          Receta: {r.medicamento?.nombre ?? 'Medicamento'}{' '}
+          <span className="tabular-nums">
+            {r.dosis} · {r.frecuencia}
+          </span>
+        </>
+      ),
       subtitle: r.medico,
       fecha: r.fechaInicio,
     });

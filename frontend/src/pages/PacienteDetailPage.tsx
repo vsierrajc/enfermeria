@@ -278,6 +278,7 @@ const PacienteDetailPage: React.FC = () => {
                     <TH>Temp</TH>
                     <TH>SpO₂</TH>
                     <TH>Enfermera</TH>
+                    <TH>Observaciones</TH>
                   </TR>
                 </THead>
                 <TBody>
@@ -294,6 +295,7 @@ const PacienteDetailPage: React.FC = () => {
                       <TD className="tabular-nums">{c.temperatura ?? '-'}°</TD>
                       <TD className="tabular-nums">{c.saturacionO2 ?? '-'}%</TD>
                       <TD>{[c.enfermera?.nombre, c.enfermera?.apellido].filter(Boolean).join(' ') || '-'}</TD>
+                      <TD className="max-w-[220px] text-muted">{c.observaciones || '-'}</TD>
                     </TR>
                   ))}
                 </TBody>
@@ -314,17 +316,23 @@ const PacienteDetailPage: React.FC = () => {
                     <TH>Dosis</TH>
                     <TH>Frecuencia</TH>
                     <TH>Duración</TH>
+                    <TH>Inicio</TH>
+                    <TH>Fin</TH>
                     <TH>Médico</TH>
+                    <TH>Observaciones</TH>
                   </TR>
                 </THead>
                 <TBody>
                   {paciente.recetas.map((r) => (
                     <TR key={r.id}>
                       <TD>{r.medicamento?.nombre || '-'}</TD>
-                      <TD>{r.dosis}</TD>
-                      <TD>{r.frecuencia}</TD>
+                      <TD className="tabular-nums">{r.dosis}</TD>
+                      <TD className="tabular-nums">{r.frecuencia}</TD>
                       <TD className="tabular-nums">{r.duracionDias} días</TD>
+                      <TD className="tabular-nums">{formatDate(r.fechaInicio)}</TD>
+                      <TD className="tabular-nums">{formatDate(r.fechaFin)}</TD>
                       <TD>{r.medico}</TD>
+                      <TD className="max-w-[220px] text-muted">{r.observaciones || '-'}</TD>
                     </TR>
                   ))}
                 </TBody>
@@ -346,6 +354,7 @@ const PacienteDetailPage: React.FC = () => {
                     <TH>Destino</TH>
                     <TH>Motivo</TH>
                     <TH>Estado</TH>
+                    <TH>Observaciones</TH>
                   </TR>
                 </THead>
                 <TBody>
@@ -358,6 +367,7 @@ const PacienteDetailPage: React.FC = () => {
                       <TD>
                         <Badge tone={estadoRemisionTone[r.estado] ?? 'neutral'}>{r.estado}</Badge>
                       </TD>
+                      <TD className="max-w-[220px] text-muted">{r.observaciones || '-'}</TD>
                     </TR>
                   ))}
                 </TBody>

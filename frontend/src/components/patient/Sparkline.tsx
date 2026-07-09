@@ -4,6 +4,7 @@ import { cn } from '../../lib/cn';
 type Props = {
   values: number[];
   tone?: 'accent' | 'warn';
+  /** @deprecated el redibujo por tema ahora lo maneja un MutationObserver interno. */
   themeKey?: string | number;
   className?: string;
 };
@@ -93,7 +94,20 @@ export function Sparkline({ values, tone = 'accent', themeKey, className }: Prop
 
     draw();
     window.addEventListener('resize', draw);
-    return () => window.removeEventListener('resize', draw);
+
+    // Redibuja cuando cambia el tema (data-theme/class en <html>), ya que el
+    // color se lee de las CSS vars del tema activo. useTheme es estado local por
+    // instancia, así que observamos el DOM directamente en vez de un prop.
+    const observer = new MutationObserver(draw);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme', 'class'],
+    });
+
+    return () => {
+      window.removeEventListener('resize', draw);
+      observer.disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values, tone, themeKey]);
 

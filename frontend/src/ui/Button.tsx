@@ -18,6 +18,7 @@ export function Button({ variant = 'default', size = 'md', className, ...props }
       className={cn(
         'inline-flex items-center gap-2 font-semibold rounded-sm transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg',
+        'disabled:cursor-not-allowed disabled:opacity-50',
         size === 'sm' ? 'text-[13px] px-3 py-2' : 'text-sm px-4 py-2.5',
         variants[variant],
         className,

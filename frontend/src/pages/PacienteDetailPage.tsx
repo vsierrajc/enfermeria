@@ -1,37 +1,76 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import {
+  ArrowLeft,
+  Briefcase,
+  FileDown,
+  Mail,
+  Phone,
+  Plus,
+  Send,
+  ShieldAlert,
+  Stethoscope,
+  UserRound,
+} from 'lucide-react';
 import { pacientesService } from '../api/pacientes.service';
 import { createPdf, addHeader, addFooter, drawTable, drawLabelValue, formatDate } from '../utils/pdf';
+import { useTheme } from '../hooks/useTheme';
+import { Button } from '../ui/Button';
+import { Card, CardBody, CardHeader } from '../ui/Card';
+import { Skeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
+import { Badge } from '../ui/Badge';
+import { Tabs, TabPanel } from '../ui/Tabs';
+import { Table, THead, TBody, TR, TH, TD } from '../ui/Table';
+import { PatientHeader } from '../components/patient/PatientHeader';
+import { AllergyBanner } from '../components/patient/AllergyBanner';
+import { VitalsStrip } from '../components/patient/VitalsStrip';
+import { ActivityTimeline } from '../components/patient/ActivityTimeline';
 import type { Paciente } from '../types';
+
+const tipoControlTone: Record<string, 'accent' | 'crit' | 'warn' | 'ok' | 'neutral'> = {
+  RUTINARIO: 'accent',
+  URGENTE: 'crit',
+  SEGUIMIENTO: 'warn',
+  INGRESO: 'ok',
+  PERIODICO: 'neutral',
+};
+
+const estadoRemisionTone: Record<string, 'accent' | 'crit' | 'warn' | 'ok' | 'neutral'> = {
+  PENDIENTE: 'warn',
+  EN_CURSO: 'accent',
+  FINALIZADO: 'ok',
+};
 
 const PacienteDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'datos' | 'controles' | 'recetas' | 'remisiones'>('datos');
+  const [error, setError] = useState(false);
+  const [activeTab, setActiveTab] = useState('resumen');
 
-  useEffect(() => {
-    loadPaciente();
-  }, [id]);
-
-  const loadPaciente = async () => {
+  const loadPaciente = useCallback(async () => {
+    setLoading(true);
+    setError(false);
     try {
       const data = await pacientesService.findOne(Number(id));
       setPaciente(data);
-    } catch (error) {
-      toast.error('Error al cargar paciente');
-      navigate('/pacientes');
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  if (loading) return <p>Cargando...</p>;
-  if (!paciente) return null;
+  useEffect(() => {
+    loadPaciente();
+  }, [loadPaciente]);
 
   const generateHistoriaClinica = () => {
+    if (!paciente) return;
     const doc = createPdf('Historia Clinica');
     let y = addHeader(doc, 'Historia Clinica', `${paciente.nombre} ${paciente.apellido} - DNI: ${paciente.dni}`);
 
@@ -108,183 +147,225 @@ const PacienteDetailPage: React.FC = () => {
     toast.success('PDF generado');
   };
 
-  const tabs = [
-    { key: 'datos', label: 'Datos Personales' },
-    { key: 'controles', label: `Controles (${paciente.controles?.length || 0})` },
-    { key: 'recetas', label: `Recetas (${paciente.recetas?.length || 0})` },
-    { key: 'remisiones', label: `Remisiones (${paciente.remisiones?.length || 0})` },
-  ];
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-16 w-full max-w-xl" />
+        <Skeleton className="h-6 w-64" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
 
-  const tipoColors: Record<string, string> = {
-    RUTINARIO: '#48bb78', URGENTE: '#e53e3e', SEGUIMIENTO: '#ed8936',
-    INGRESO: '#4299e1', PERIODICO: '#9f7aea',
-  };
+  if (error || !paciente) {
+    return (
+      <EmptyState
+        icon={ShieldAlert}
+        title="No se pudo cargar el paciente"
+        description="Verifica tu conexión e intenta de nuevo."
+        action={<Button onClick={loadPaciente}>Reintentar</Button>}
+      />
+    );
+  }
 
-  const estadoColors: Record<string, string> = {
-    PENDIENTE: '#ed8936', EN_CURSO: '#4299e1', FINALIZADO: '#48bb78',
-  };
+  const disabledTitle = 'Disponible en la siguiente tarea';
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <button onClick={() => navigate('/pacientes')} style={{ padding: '8px 16px', background: '#edf2f7', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-          ← Volver
-        </button>
-        <button onClick={generateHistoriaClinica} style={{ padding: '8px 16px', background: '#e53e3e', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-          PDF Historia Clinica
-        </button>
+      <button
+        type="button"
+        onClick={() => navigate('/pacientes')}
+        className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        <ArrowLeft size={15} />
+        Pacientes
+      </button>
+
+      <PatientHeader paciente={paciente} />
+      <AllergyBanner paciente={paciente} />
+
+      <VitalsStrip controles={paciente.controles} themeKey={theme} />
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <Button variant="primary" disabled title={disabledTitle}>
+          <Plus size={16} /> Registrar signos vitales
+        </Button>
+        <Button disabled title={disabledTitle}>
+          <Stethoscope size={16} /> Formular receta
+        </Button>
+        <Button disabled title={disabledTitle}>
+          <Send size={16} /> Remitir
+        </Button>
+        <Button variant="ghost" className="ml-auto" onClick={generateHistoriaClinica}>
+          <FileDown size={16} /> Historia clínica · PDF
+        </Button>
       </div>
 
-      {paciente.alergias && (
-        <div style={{ padding: '12px 16px', background: '#fed7d7', color: '#c53030', borderRadius: 8, marginBottom: 16, fontWeight: 600 }}>
-          ⚠️ ALERTA ALERGIAS: {paciente.alergias}
-        </div>
-      )}
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        tabs={[
+          { value: 'resumen', label: 'Resumen' },
+          { value: 'controles', label: 'Controles', count: paciente.controles?.length ?? 0 },
+          { value: 'recetas', label: 'Recetas', count: paciente.recetas?.length ?? 0 },
+          { value: 'remisiones', label: 'Remisiones', count: paciente.remisiones?.length ?? 0 },
+        ]}
+      >
+        <TabPanel value="resumen">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+            <Card>
+              <CardHeader>
+                <h3 className="text-sm font-semibold text-text">Actividad reciente</h3>
+              </CardHeader>
+              <CardBody className="p-2">
+                <ActivityTimeline paciente={paciente} />
+              </CardBody>
+            </Card>
 
-      <h1 style={{ margin: '0 0 24px', color: '#2d3748' }}>{paciente.nombre} {paciente.apellido}</h1>
-
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e2e8f0' }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            style={{
-              padding: '12px 20px', border: 'none', background: 'transparent',
-              borderBottom: activeTab === tab.key ? '2px solid #4299e1' : '2px solid transparent',
-              marginBottom: -2, cursor: 'pointer', fontWeight: activeTab === tab.key ? 600 : 400,
-              color: activeTab === tab.key ? '#4299e1' : '#718096',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'datos' && (
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {[
-              { label: 'DNI', value: paciente.dni },
-              { label: 'Nombre', value: paciente.nombre },
-              { label: 'Apellido', value: paciente.apellido },
-              { label: 'Fecha Nacimiento', value: paciente.fechaNacimiento?.split('T')[0] || '-' },
-              { label: 'Departamento', value: paciente.departamento || '-' },
-              { label: 'Puesto', value: paciente.puesto || '-' },
-              { label: 'Fecha Ingreso', value: paciente.fechaIngreso?.split('T')[0] || '-' },
-              { label: 'Teléfono', value: paciente.telefono || '-' },
-              { label: 'Email', value: paciente.email || '-' },
-              { label: 'Contacto Emergencia', value: paciente.contactoEmergencia || '-' },
-              { label: 'Alergias', value: paciente.alergias || 'Ninguna' },
-            ].map((item) => (
-              <div key={item.label}>
-                <div style={{ fontSize: '0.8rem', color: '#718096', marginBottom: 4 }}>{item.label}</div>
-                <div style={{ fontWeight: 500 }}>{item.value}</div>
-              </div>
-            ))}
+            <Card>
+              <CardHeader>
+                <h3 className="text-sm font-semibold text-text">Ficha ocupacional</h3>
+              </CardHeader>
+              <CardBody className="flex flex-col gap-1 p-2">
+                <div className="flex items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-surface-2">
+                  <span className="inline-flex items-center gap-2 text-muted">
+                    <Briefcase size={15} className="text-faint" /> Área · cargo
+                  </span>
+                  <span className="font-semibold text-text">
+                    {[paciente.departamento, paciente.puesto].filter(Boolean).join(' · ') || '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-surface-2">
+                  <span className="inline-flex items-center gap-2 text-muted">
+                    <UserRound size={15} className="text-faint" /> Contacto emerg.
+                  </span>
+                  <span className="font-semibold text-text">{paciente.contactoEmergencia || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-surface-2">
+                  <span className="inline-flex items-center gap-2 text-muted">
+                    <Phone size={15} className="text-faint" /> Teléfono
+                  </span>
+                  <span className="font-semibold text-text tabular-nums">{paciente.telefono || '-'}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-sm px-2 py-2 text-sm hover:bg-surface-2">
+                  <span className="inline-flex items-center gap-2 text-muted">
+                    <Mail size={15} className="text-faint" /> Email
+                  </span>
+                  <span className="font-semibold text-text">{paciente.email || '-'}</span>
+                </div>
+              </CardBody>
+            </Card>
           </div>
-        </div>
-      )}
+        </TabPanel>
 
-      {activeTab === 'controles' && (
-        <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {(!paciente.controles || paciente.controles.length === 0) ? (
-            <p style={{ padding: 40, textAlign: 'center', color: '#718096' }}>Sin controles registrados</p>
-          ) : (
-            <table style={{ width: '100%' }}>
-              <thead>
-                <tr style={{ background: '#edf2f7' }}>
-                  {['Fecha', 'Tipo', 'Enfermera', 'Presión', 'Temp.', 'Pulso', 'O2', 'Observaciones'].map((h) => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', color: '#4a5568' }}>{h}</th>
+        <TabPanel value="controles">
+          <Card>
+            {!paciente.controles || paciente.controles.length === 0 ? (
+              <EmptyState icon={Stethoscope} title="Sin controles registrados" />
+            ) : (
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Fecha</TH>
+                    <TH>Tipo</TH>
+                    <TH>PA</TH>
+                    <TH>FC</TH>
+                    <TH>Temp</TH>
+                    <TH>SpO₂</TH>
+                    <TH>Enfermera</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {paciente.controles.map((c) => (
+                    <TR key={c.id}>
+                      <TD className="tabular-nums">{formatDate(c.fecha)}</TD>
+                      <TD>
+                        <Badge tone={tipoControlTone[c.tipo] ?? 'neutral'}>{c.tipo}</Badge>
+                      </TD>
+                      <TD className="tabular-nums">
+                        {c.presionSistolica ?? '-'}/{c.presionDiastolica ?? '-'}
+                      </TD>
+                      <TD className="tabular-nums">{c.pulso ?? '-'}</TD>
+                      <TD className="tabular-nums">{c.temperatura ?? '-'}°</TD>
+                      <TD className="tabular-nums">{c.saturacionO2 ?? '-'}%</TD>
+                      <TD>{[c.enfermera?.nombre, c.enfermera?.apellido].filter(Boolean).join(' ') || '-'}</TD>
+                    </TR>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paciente.controles.map((c) => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                    <td style={{ padding: '12px 16px' }}>{new Date(c.fecha).toLocaleDateString()}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '2px 8px', background: tipoColors[c.tipo] + '20', color: tipoColors[c.tipo], borderRadius: 4, fontSize: '0.8rem' }}>
-                        {c.tipo}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>{c.enfermera?.nombre} {c.enfermera?.apellido}</td>
-                    <td style={{ padding: '12px 16px' }}>{c.presionSistolica}/{c.presionDiastolica}</td>
-                    <td style={{ padding: '12px 16px' }}>{c.temperatura}°C</td>
-                    <td style={{ padding: '12px 16px' }}>{c.pulso}</td>
-                    <td style={{ padding: '12px 16px' }}>{c.saturacionO2}%</td>
-                    <td style={{ padding: '12px 16px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.observaciones || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+                </TBody>
+              </Table>
+            )}
+          </Card>
+        </TabPanel>
 
-      {activeTab === 'recetas' && (
-        <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {(!paciente.recetas || paciente.recetas.length === 0) ? (
-            <p style={{ padding: 40, textAlign: 'center', color: '#718096' }}>Sin recetas registradas</p>
-          ) : (
-            <table style={{ width: '100%' }}>
-              <thead>
-                <tr style={{ background: '#edf2f7' }}>
-                  {['Medicamento', 'Dosis', 'Frecuencia', 'Inicio', 'Fin', 'Médico', 'Observaciones'].map((h) => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', color: '#4a5568' }}>{h}</th>
+        <TabPanel value="recetas">
+          <Card>
+            {!paciente.recetas || paciente.recetas.length === 0 ? (
+              <EmptyState icon={Stethoscope} title="Sin recetas registradas" />
+            ) : (
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Medicamento</TH>
+                    <TH>Dosis</TH>
+                    <TH>Frecuencia</TH>
+                    <TH>Duración</TH>
+                    <TH>Médico</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {paciente.recetas.map((r) => (
+                    <TR key={r.id}>
+                      <TD>{r.medicamento?.nombre || '-'}</TD>
+                      <TD>{r.dosis}</TD>
+                      <TD>{r.frecuencia}</TD>
+                      <TD className="tabular-nums">{r.duracionDias} días</TD>
+                      <TD>{r.medico}</TD>
+                    </TR>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paciente.recetas.map((r) => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                    <td style={{ padding: '12px 16px' }}>{r.medicamento?.nombre}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.dosis}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.frecuencia}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.fechaInicio.split('T')[0]}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.fechaFin.split('T')[0]}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.medico}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.observaciones || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+                </TBody>
+              </Table>
+            )}
+          </Card>
+        </TabPanel>
 
-      {activeTab === 'remisiones' && (
-        <div style={{ background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {(!paciente.remisiones || paciente.remisiones.length === 0) ? (
-            <p style={{ padding: 40, textAlign: 'center', color: '#718096' }}>Sin remisiones registradas</p>
-          ) : (
-            <table style={{ width: '100%' }}>
-              <thead>
-                <tr style={{ background: '#edf2f7' }}>
-                  {['Fecha', 'Tipo', 'Destino', 'Motivo', 'Estado', 'Observaciones'].map((h) => (
-                    <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', color: '#4a5568' }}>{h}</th>
+        <TabPanel value="remisiones">
+          <Card>
+            {!paciente.remisiones || paciente.remisiones.length === 0 ? (
+              <EmptyState icon={Send} title="Sin remisiones registradas" />
+            ) : (
+              <Table>
+                <THead>
+                  <TR>
+                    <TH>Fecha</TH>
+                    <TH>Tipo</TH>
+                    <TH>Destino</TH>
+                    <TH>Motivo</TH>
+                    <TH>Estado</TH>
+                  </TR>
+                </THead>
+                <TBody>
+                  {paciente.remisiones.map((r) => (
+                    <TR key={r.id}>
+                      <TD className="tabular-nums">{formatDate(r.fechaRemision)}</TD>
+                      <TD>{r.tipo}</TD>
+                      <TD>{r.destino}</TD>
+                      <TD>{r.motivo}</TD>
+                      <TD>
+                        <Badge tone={estadoRemisionTone[r.estado] ?? 'neutral'}>{r.estado}</Badge>
+                      </TD>
+                    </TR>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paciente.remisiones.map((r) => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                    <td style={{ padding: '12px 16px' }}>{r.fechaRemision.split('T')[0]}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.tipo}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.destino}</td>
-                    <td style={{ padding: '12px 16px' }}>{r.motivo}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ padding: '2px 8px', background: estadoColors[r.estado] + '20', color: estadoColors[r.estado], borderRadius: 4, fontSize: '0.8rem' }}>
-                        {r.estado}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>{r.observaciones || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+                </TBody>
+              </Table>
+            )}
+          </Card>
+        </TabPanel>
+      </Tabs>
     </div>
   );
 };

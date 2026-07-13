@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, MinLength, Matches } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber, IsBoolean, MinLength, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreateEnfermeraDto {
   @ApiProperty({ example: 'enfermera1' })
@@ -38,4 +38,11 @@ export class CreateEnfermeraDto {
   @IsOptional()
   @IsNumber()
   roleId?: number;
+}
+
+export class UpdateEnfermeraDto extends PartialType(CreateEnfermeraDto) {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
 }

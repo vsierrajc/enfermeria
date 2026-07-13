@@ -3,6 +3,7 @@ import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { controlesService } from '../api/controles.service';
 import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDateTime } from '../utils/pdf';
+import { fetchAllPages } from '../lib/fetchAllPages';
 import { toast } from '../ui/Toast';
 import { ListPage } from '../components/list/ListPage';
 import { FilterBar } from '../components/list/FilterBar';
@@ -47,6 +48,7 @@ const ControlesPage: React.FC = () => {
     error,
     setPage,
     setFilters,
+    filters,
     reload,
     afterDelete,
   } = usePagedList<Control, ControlesFilters>({
@@ -58,6 +60,7 @@ const ControlesPage: React.FC = () => {
   const [filterState, setFilterState] = useState<FilterState>(emptyFilterState);
   const [showModal, setShowModal] = useState(false);
   const [deletingControl, setDeletingControl] = useState<Control | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const { canWrite } = useAuth();
 
@@ -88,26 +91,39 @@ const ControlesPage: React.FC = () => {
     }
   };
 
-  const generatePdf = () => {
-    const doc = createPdf('Reporte de Controles');
-    const y = addHeader(doc, 'Reporte de Controles', `Total: ${controles.length} registros`);
-    addFooter(doc, 1);
+  const generatePdf = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllPages(fetchControles, filters);
+      if (rows.length === 0) {
+        toast.error('No hay registros para exportar');
+        return;
+      }
 
-    const body = controles.map((c) => [
-      formatDateTime(c.fecha),
-      `${c.paciente?.nombre || ''} ${c.paciente?.apellido || ''}`.trim(),
-      `${c.enfermera?.nombre || ''}`,
-      c.tipo,
-      `${c.presionSistolica || '-'}/${c.presionDiastolica || '-'}`,
-      `${c.temperatura || '-'} C`,
-      `${c.pulso || '-'}`,
-      `${c.saturacionO2 || '-'}%`,
-    ]);
+      const doc = createPdf('Reporte de Controles');
+      const y = addHeader(doc, 'Reporte de Controles', `Total: ${rows.length} registros`);
+      addFooter(doc, 1);
 
-    drawTable(doc, y, [['Fecha', 'Paciente', 'Enfermera', 'Tipo', 'Presion', 'Temp.', 'Pulso', 'O2']], body);
+      const body = rows.map((c) => [
+        formatDateTime(c.fecha),
+        `${c.paciente?.nombre || ''} ${c.paciente?.apellido || ''}`.trim(),
+        `${c.enfermera?.nombre || ''}`,
+        c.tipo,
+        `${c.presionSistolica || '-'}/${c.presionDiastolica || '-'}`,
+        `${c.temperatura || '-'} C`,
+        `${c.pulso || '-'}`,
+        `${c.saturacionO2 || '-'}%`,
+      ]);
 
-    doc.save('controles.pdf');
-    toast.success('PDF generado');
+      drawTable(doc, y, [['Fecha', 'Paciente', 'Enfermera', 'Tipo', 'Presion', 'Temp.', 'Pulso', 'O2']], body);
+
+      doc.save('controles.pdf');
+      toast.success('PDF generado');
+    } catch {
+      toast.error('Error al generar el PDF');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -116,7 +132,7 @@ const ControlesPage: React.FC = () => {
         title="Controles"
         actions={
           <>
-            <Button variant="ghost" onClick={generatePdf}>
+            <Button variant="ghost" onClick={generatePdf} disabled={exporting}>
               <FileDown size={16} /> PDF
             </Button>
             {canWrite && (

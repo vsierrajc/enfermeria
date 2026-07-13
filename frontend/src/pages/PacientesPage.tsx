@@ -4,6 +4,7 @@ import { AlertTriangle, Eye, FileDown, Pencil, Plus, Trash2 } from 'lucide-react
 import { pacientesService } from '../api/pacientes.service';
 import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDate } from '../utils/pdf';
+import { fetchAllPages } from '../lib/fetchAllPages';
 import { toast } from '../ui/Toast';
 import { ListPage } from '../components/list/ListPage';
 import { FilterBar } from '../components/list/FilterBar';
@@ -47,6 +48,7 @@ const PacientesPage: React.FC = () => {
     error,
     setPage,
     setFilters,
+    filters,
     reload,
     afterDelete,
   } = usePagedList<Paciente, PacientesFilters>({
@@ -62,6 +64,7 @@ const PacientesPage: React.FC = () => {
   const [formData, setFormData] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deletingPaciente, setDeletingPaciente] = useState<Paciente | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -135,26 +138,39 @@ const PacientesPage: React.FC = () => {
     }
   };
 
-  const generatePdf = () => {
-    const doc = createPdf('Reporte de Pacientes');
-    const y = addHeader(doc, 'Reporte de Pacientes', `Total: ${pacientes.length} registros`);
+  const generatePdf = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllPages(fetchPacientes, filters);
+      if (rows.length === 0) {
+        toast.error('No hay registros para exportar');
+        return;
+      }
 
-    const body = pacientes.map((p) => [
-      p.dni,
-      `${p.nombre} ${p.apellido}`,
-      p.departamento || '-',
-      p.puesto || '-',
-      formatDate(p.fechaNacimiento),
-      p.telefono || '-',
-      p.alergias || '-',
-      p.activo ? 'Activo' : 'Inactivo',
-    ]);
+      const doc = createPdf('Reporte de Pacientes');
+      const y = addHeader(doc, 'Reporte de Pacientes', `Total: ${rows.length} registros`);
 
-    addFooter(doc, 1);
-    drawTable(doc, y, [['DNI', 'Nombre', 'Departamento', 'Puesto', 'F. Nacimiento', 'Telefono', 'Alergias', 'Estado']], body);
+      const body = rows.map((p) => [
+        p.dni,
+        `${p.nombre} ${p.apellido}`,
+        p.departamento || '-',
+        p.puesto || '-',
+        formatDate(p.fechaNacimiento),
+        p.telefono || '-',
+        p.alergias || '-',
+        p.activo ? 'Activo' : 'Inactivo',
+      ]);
 
-    doc.save('pacientes.pdf');
-    toast.success('PDF generado');
+      addFooter(doc, 1);
+      drawTable(doc, y, [['DNI', 'Nombre', 'Departamento', 'Puesto', 'F. Nacimiento', 'Telefono', 'Alergias', 'Estado']], body);
+
+      doc.save('pacientes.pdf');
+      toast.success('PDF generado');
+    } catch {
+      toast.error('Error al generar el PDF');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -163,7 +179,7 @@ const PacientesPage: React.FC = () => {
         title="Pacientes"
         actions={
           <>
-            <Button variant="ghost" onClick={generatePdf}>
+            <Button variant="ghost" onClick={generatePdf} disabled={exporting}>
               <FileDown size={16} /> PDF
             </Button>
             {isAdmin && (

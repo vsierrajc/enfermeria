@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { controlesService } from '../api/controles.service';
 import { useAuth } from '../hooks/useAuth';
@@ -40,6 +41,13 @@ const fetchControles = (params: ControlesFilters & { page: number; limit: number
   controlesService.findAll(params);
 
 const ControlesPage: React.FC = () => {
+  // Deep-link desde el dashboard ("Controles de hoy" -> ?desde=hoy&hasta=hoy):
+  // se lee UNA vez al montar para sembrar tanto el filtro inicial como los
+  // inputs de fecha del FilterBar.
+  const [searchParams] = useSearchParams();
+  const initialDesde = searchParams.get('desde') || '';
+  const initialHasta = searchParams.get('hasta') || '';
+
   const {
     items: controles,
     total,
@@ -53,11 +61,15 @@ const ControlesPage: React.FC = () => {
     afterDelete,
   } = usePagedList<Control, ControlesFilters>({
     fetcher: fetchControles,
-    initialFilters: {},
+    initialFilters: { desde: initialDesde || undefined, hasta: initialHasta || undefined },
     pageSize: PAGE_SIZE,
   });
 
-  const [filterState, setFilterState] = useState<FilterState>(emptyFilterState);
+  const [filterState, setFilterState] = useState<FilterState>({
+    ...emptyFilterState,
+    desde: initialDesde,
+    hasta: initialHasta,
+  });
   const [showModal, setShowModal] = useState(false);
   const [deletingControl, setDeletingControl] = useState<Control | null>(null);
   const [exporting, setExporting] = useState(false);

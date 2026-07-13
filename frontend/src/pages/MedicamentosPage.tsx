@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { medicamentosService } from '../api/medicamentos.service';
 import { useAuth } from '../hooks/useAuth';
@@ -35,6 +36,12 @@ const emptyForm = {
 };
 
 const MedicamentosPage: React.FC = () => {
+  // Deep-link desde el dashboard ("Stock bajo" -> ?soloStockBajo=1): se lee UNA
+  // vez al montar para sembrar el filtro inicial y el toggle activo.
+  const [searchParams] = useSearchParams();
+  const stockBajoParam = searchParams.get('soloStockBajo');
+  const initialSoloStockBajo = stockBajoParam === '1' || stockBajoParam === 'true';
+
   const {
     items: medicamentos,
     total,
@@ -47,12 +54,12 @@ const MedicamentosPage: React.FC = () => {
     afterDelete,
   } = usePagedList<Medicamento, MedicamentosFilters>({
     fetcher: fetchMedicamentos,
-    initialFilters: {},
+    initialFilters: { soloStockBajo: initialSoloStockBajo || undefined },
     pageSize: PAGE_SIZE,
   });
 
   const [q, setQ] = useState('');
-  const [soloStockBajo, setSoloStockBajo] = useState(false);
+  const [soloStockBajo, setSoloStockBajo] = useState(initialSoloStockBajo);
   const [incluirInactivos, setIncluirInactivos] = useState(false);
 
   const [showModal, setShowModal] = useState(false);

@@ -58,3 +58,20 @@ test('el filtro de tipo consulta con el tipo seleccionado y vuelve a página 1',
     expect(controlesService.findAll).toHaveBeenCalledWith(expect.objectContaining({ tipo: 'URGENTE', page: 1 })),
   );
 });
+
+test('deep-link ?desde&hasta desde el dashboard carga la lista ya filtrada', async () => {
+  render(
+    <MemoryRouter initialEntries={['/controles?desde=2026-07-13&hasta=2026-07-13']}>
+      <AuthProvider>
+        <ControlesPage />
+      </AuthProvider>
+    </MemoryRouter>,
+  );
+  await waitFor(() => expect(screen.getByText('Juan Pérez')).toBeInTheDocument());
+
+  expect(controlesService.findAll).toHaveBeenCalledWith(
+    expect.objectContaining({ desde: '2026-07-13', hasta: '2026-07-13' }),
+  );
+  expect(screen.getByLabelText(/^desde$/i)).toHaveValue('2026-07-13');
+  expect(screen.getByLabelText(/^hasta$/i)).toHaveValue('2026-07-13');
+});

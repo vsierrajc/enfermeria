@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { remisionesService } from '../api/remisiones.service';
 import { useAuth } from '../hooks/useAuth';
@@ -46,6 +47,16 @@ const fetchRemisiones = (params: RemisionesFilters & { page: number; limit: numb
   remisionesService.findAll(params);
 
 const RemisionesPage: React.FC = () => {
+  // Deep-link desde el dashboard ("Remisiones pendientes" -> ?estado=PENDIENTE):
+  // se lee UNA vez al montar para sembrar tanto el filtro inicial como el estado
+  // del FilterBar, así la lista carga ya filtrada en vez de mostrar todo.
+  const [searchParams] = useSearchParams();
+  const initialEstadoParam = searchParams.get('estado');
+  const initialEstado =
+    initialEstadoParam && (ESTADOS as string[]).includes(initialEstadoParam) ? initialEstadoParam : '';
+  const initialDesde = searchParams.get('desde') || '';
+  const initialHasta = searchParams.get('hasta') || '';
+
   const {
     items: remisiones,
     total,
@@ -59,11 +70,20 @@ const RemisionesPage: React.FC = () => {
     afterDelete,
   } = usePagedList<Remision, RemisionesFilters>({
     fetcher: fetchRemisiones,
-    initialFilters: {},
+    initialFilters: {
+      estado: initialEstado || undefined,
+      desde: initialDesde || undefined,
+      hasta: initialHasta || undefined,
+    },
     pageSize: PAGE_SIZE,
   });
 
-  const [filterState, setFilterState] = useState<FilterState>(emptyFilterState);
+  const [filterState, setFilterState] = useState<FilterState>({
+    ...emptyFilterState,
+    estado: initialEstado,
+    desde: initialDesde,
+    hasta: initialHasta,
+  });
   const [showModal, setShowModal] = useState(false);
   const [deletingRemision, setDeletingRemision] = useState<Remision | null>(null);
   const [exporting, setExporting] = useState(false);

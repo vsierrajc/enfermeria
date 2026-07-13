@@ -32,9 +32,9 @@ beforeEach(() => {
   (remisionesService.findAll as any).mockClear();
 });
 
-function renderPage() {
+function renderPage(initialEntries = ['/remisiones']) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={initialEntries}>
       <AuthProvider>
         <RemisionesPage />
       </AuthProvider>
@@ -59,4 +59,12 @@ test('el filtro de estado consulta con el estado seleccionado y vuelve a página
   await waitFor(() =>
     expect(remisionesService.findAll).toHaveBeenCalledWith(expect.objectContaining({ estado: 'FINALIZADO', page: 1 })),
   );
+});
+
+test('deep-link ?estado=PENDIENTE desde el dashboard carga la lista ya filtrada', async () => {
+  renderPage(['/remisiones?estado=PENDIENTE']);
+  await waitFor(() => expect(screen.getByText('Juan Pérez')).toBeInTheDocument());
+
+  expect(remisionesService.findAll).toHaveBeenCalledWith(expect.objectContaining({ estado: 'PENDIENTE' }));
+  expect(screen.getByLabelText(/^estado$/i)).toHaveValue('PENDIENTE');
 });

@@ -142,6 +142,13 @@ export interface PresionPromedio {
   promedioSaturacion: number;
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface Enfermera {
   id: number;
   usuario: string;

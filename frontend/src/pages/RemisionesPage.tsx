@@ -22,8 +22,8 @@ const RemisionesPage: React.FC = () => {
   const loadAll = async () => {
     try {
       const [r, p] = await Promise.all([remisionesService.findAll(), pacientesService.findAll()]);
-      setRemisiones(r);
-      setPacientes(p);
+      setRemisiones(r.items);
+      setPacientes(p.items);
     } catch (error) { toast.error('Error al cargar'); }
     finally { setLoading(false); }
   };
@@ -34,7 +34,8 @@ const RemisionesPage: React.FC = () => {
       if (filters.estado) params.estado = filters.estado;
       if (filters.desde) params.desde = filters.desde;
       if (filters.hasta) params.hasta = filters.hasta;
-      setRemisiones(await remisionesService.findAll(params));
+      const data = await remisionesService.findAll(params);
+      setRemisiones(data.items);
     } catch (error) { toast.error('Error al filtrar'); }
   };
 

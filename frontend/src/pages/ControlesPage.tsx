@@ -26,8 +26,8 @@ const ControlesPage: React.FC = () => {
         controlesService.findAll(),
         pacientesService.findAll(),
       ]);
-      setControles(c);
-      setPacientes(p);
+      setControles(c.items);
+      setPacientes(p.items);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally { setLoading(false); }
@@ -41,7 +41,7 @@ const ControlesPage: React.FC = () => {
       if (filters.hasta) params.hasta = filters.hasta;
       if (filters.tipo) params.tipo = filters.tipo;
       const data = await controlesService.findAll(params);
-      setControles(data);
+      setControles(data.items);
     } catch (error) { toast.error('Error al filtrar'); }
   };
 

@@ -29,8 +29,8 @@ const RecetasPage: React.FC = () => {
         pacientesService.findAll(),
         medicamentosService.findAll(),
       ]);
-      setRecetas(r);
-      setPacientes(p);
+      setRecetas(r.items);
+      setPacientes(p.items);
       setMedicamentos(m);
     } catch (error) { toast.error('Error al cargar'); }
     finally { setLoading(false); }
@@ -43,7 +43,7 @@ const RecetasPage: React.FC = () => {
       if (filters.desde) params.desde = filters.desde;
       if (filters.hasta) params.hasta = filters.hasta;
       const data = await recetasService.findAll(params);
-      setRecetas(data);
+      setRecetas(data.items);
     } catch (error) { toast.error('Error al filtrar'); }
   };
 

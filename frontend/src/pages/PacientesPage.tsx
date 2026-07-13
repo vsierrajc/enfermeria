@@ -28,7 +28,7 @@ const PacientesPage: React.FC = () => {
   const loadPacientes = async () => {
     try {
       const data = await pacientesService.findAll();
-      setPacientes(data);
+      setPacientes(data.items);
     } catch (error) {
       toast.error('Error al cargar pacientes');
     } finally {
@@ -39,7 +39,7 @@ const PacientesPage: React.FC = () => {
   const handleSearch = async () => {
     try {
       const data = await pacientesService.findAll({ q: search });
-      setPacientes(data);
+      setPacientes(data.items);
     } catch (error) {
       toast.error('Error al buscar');
     }

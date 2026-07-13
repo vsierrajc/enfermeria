@@ -3,6 +3,7 @@ import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { remisionesService } from '../api/remisiones.service';
 import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDate } from '../utils/pdf';
+import { fetchAllPages } from '../lib/fetchAllPages';
 import { toast } from '../ui/Toast';
 import { ListPage } from '../components/list/ListPage';
 import { FilterBar } from '../components/list/FilterBar';
@@ -53,6 +54,7 @@ const RemisionesPage: React.FC = () => {
     error,
     setPage,
     setFilters,
+    filters,
     reload,
     afterDelete,
   } = usePagedList<Remision, RemisionesFilters>({
@@ -64,6 +66,7 @@ const RemisionesPage: React.FC = () => {
   const [filterState, setFilterState] = useState<FilterState>(emptyFilterState);
   const [showModal, setShowModal] = useState(false);
   const [deletingRemision, setDeletingRemision] = useState<Remision | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const { canWrite, isAdmin } = useAuth();
 
@@ -104,24 +107,37 @@ const RemisionesPage: React.FC = () => {
     }
   };
 
-  const generatePdf = () => {
-    const doc = createPdf('Reporte de Remisiones');
-    const y = addHeader(doc, 'Reporte de Remisiones', `Total: ${remisiones.length} registros`);
-    addFooter(doc, 1);
+  const generatePdf = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllPages(fetchRemisiones, filters);
+      if (rows.length === 0) {
+        toast.error('No hay registros para exportar');
+        return;
+      }
 
-    const body = remisiones.map((r) => [
-      formatDate(r.fechaRemision),
-      `${r.paciente?.nombre || ''} ${r.paciente?.apellido || ''}`.trim(),
-      r.tipo,
-      r.destino,
-      r.motivo,
-      r.estado,
-    ]);
+      const doc = createPdf('Reporte de Remisiones');
+      const y = addHeader(doc, 'Reporte de Remisiones', `Total: ${rows.length} registros`);
+      addFooter(doc, 1);
 
-    drawTable(doc, y, [['Fecha', 'Paciente', 'Tipo', 'Destino', 'Motivo', 'Estado']], body);
+      const body = rows.map((r) => [
+        formatDate(r.fechaRemision),
+        `${r.paciente?.nombre || ''} ${r.paciente?.apellido || ''}`.trim(),
+        r.tipo,
+        r.destino,
+        r.motivo,
+        r.estado,
+      ]);
 
-    doc.save('remisiones.pdf');
-    toast.success('PDF generado');
+      drawTable(doc, y, [['Fecha', 'Paciente', 'Tipo', 'Destino', 'Motivo', 'Estado']], body);
+
+      doc.save('remisiones.pdf');
+      toast.success('PDF generado');
+    } catch {
+      toast.error('Error al generar el PDF');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -130,7 +146,7 @@ const RemisionesPage: React.FC = () => {
         title="Remisiones"
         actions={
           <>
-            <Button variant="ghost" onClick={generatePdf}>
+            <Button variant="ghost" onClick={generatePdf} disabled={exporting}>
               <FileDown size={16} /> PDF
             </Button>
             {canWrite && (

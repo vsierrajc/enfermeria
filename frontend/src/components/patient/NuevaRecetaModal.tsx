@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '../../ui/Modal';
 import { Input } from '../../ui/Input';
-import { Select } from '../../ui/Select';
 import { Textarea } from '../../ui/Textarea';
 import { Button } from '../../ui/Button';
 import { toast } from '../../ui/Toast';
 import { recetasService } from '../../api/recetas.service';
-import { medicamentosService } from '../../api/medicamentos.service';
 import { useAuth } from '../../hooks/useAuth';
 import { PatientPicker } from './PatientPicker';
+import { MedicamentoPicker } from '../MedicamentoPicker';
 import type { Medicamento, Paciente, Receta } from '../../types';
 
 type Props = {
@@ -25,8 +24,7 @@ function today(): string {
 export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: Props) {
   const { user } = useAuth();
   const [pickedPaciente, setPickedPaciente] = useState<Paciente | null>(null);
-  const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
-  const [medicamentoId, setMedicamentoId] = useState('');
+  const [medicamento, setMedicamento] = useState<Medicamento | null>(null);
   const [dosis, setDosis] = useState('');
   const [frecuencia, setFrecuencia] = useState('');
   const [duracionDias, setDuracionDias] = useState('7');
@@ -37,14 +35,6 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
-    medicamentosService
-      .findAll()
-      .then(setMedicamentos)
-      .catch(() => toast.error('No se pudieron cargar los medicamentos'));
-  }, [open]);
-
-  useEffect(() => {
     if (open && user) {
       setMedico(`${user.nombre} ${user.apellido}`.trim());
     }
@@ -52,7 +42,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
 
   const reset = () => {
     setPickedPaciente(null);
-    setMedicamentoId('');
+    setMedicamento(null);
     setDosis('');
     setFrecuencia('');
     setDuracionDias('7');
@@ -72,7 +62,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
       toast.error('Selecciona un paciente');
       return;
     }
-    if (!medicamentoId || !dosis.trim() || !frecuencia.trim() || !fechaInicio || !fechaFin) {
+    if (!medicamento || !dosis.trim() || !frecuencia.trim() || !fechaInicio || !fechaFin) {
       toast.error('Completa los campos obligatorios');
       return;
     }
@@ -80,7 +70,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
     try {
       const dto: Partial<Receta> = {
         pacienteId: targetPacienteId,
-        medicamentoId: Number(medicamentoId),
+        medicamentoId: medicamento.id,
         dosis,
         frecuencia,
         duracionDias: Number(duracionDias),
@@ -125,19 +115,10 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
             <PatientPicker value={pickedPaciente} onChange={setPickedPaciente} />
           </div>
         )}
-        <Select
-          label="Medicamento"
-          value={medicamentoId}
-          onChange={(e) => setMedicamentoId(e.target.value)}
-          className="col-span-2"
-        >
-          <option value="">Seleccionar...</option>
-          {medicamentos.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nombre}
-            </option>
-          ))}
-        </Select>
+        <div className="col-span-2 flex flex-col gap-1">
+          <span className="text-xs uppercase tracking-wide text-faint font-medium">Medicamento</span>
+          <MedicamentoPicker value={medicamento} onChange={setMedicamento} />
+        </div>
         <Input label="Dosis" value={dosis} onChange={(e) => setDosis(e.target.value)} placeholder="ej. 500 mg" />
         <Input
           label="Frecuencia"

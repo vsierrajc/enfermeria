@@ -7,12 +7,19 @@ import { resolvePage } from '../common/pagination/pagination';
 export class MedicamentosService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query?: { q?: string; activo?: boolean; soloStockBajo?: boolean; page?: string; limit?: string }) {
+  async findAll(query?: {
+    q?: string;
+    activo?: boolean;
+    soloStockBajo?: boolean;
+    incluirInactivos?: boolean;
+    page?: string;
+    limit?: string;
+  }) {
     const where: any = {};
 
     if (query?.activo !== undefined) {
       where.activo = query.activo;
-    } else {
+    } else if (!query?.incluirInactivos) {
       where.activo = true;
     }
 

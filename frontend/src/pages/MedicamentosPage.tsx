@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Power, Trash2 } from 'lucide-react';
 import { medicamentosService } from '../api/medicamentos.service';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from '../ui/Toast';
@@ -20,7 +20,7 @@ const PAGE_SIZE = 20;
 
 const PRESENTACIONES = ['COMPRIMIDO', 'JERINGA', 'AMPOLLA', 'JARABE', 'CREMA', 'CAPSULA'] as const;
 
-type MedicamentosFilters = { q?: string; soloStockBajo?: boolean };
+type MedicamentosFilters = { q?: string; soloStockBajo?: boolean; incluirInactivos?: boolean };
 
 const fetchMedicamentos = (params: MedicamentosFilters & { page: number; limit: number }) =>
   medicamentosService.findAll(params);
@@ -53,6 +53,7 @@ const MedicamentosPage: React.FC = () => {
 
   const [q, setQ] = useState('');
   const [soloStockBajo, setSoloStockBajo] = useState(false);
+  const [incluirInactivos, setIncluirInactivos] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editingMedicamento, setEditingMedicamento] = useState<Medicamento | null>(null);
@@ -62,13 +63,14 @@ const MedicamentosPage: React.FC = () => {
 
   const { isAdmin } = useAuth();
 
-  // Un solo efecto unifica ambos filtros (búsqueda y toggle) para que cada
-  // `setFilters` lleve SIEMPRE los dos valores vigentes: al depender de
-  // `[q, soloStockBajo]` no hay closure obsoleto (activar el toggle mientras un
-  // timeout de búsqueda estaba pendiente ya no revierte `soloStockBajo`). El
-  // debounce de 250ms sirve tanto para el tecleo como para el toggle; `setFilters`
-  // resetea a página 1 atómicamente. Se omite el primer render para no disparar un
-  // fetch redundante (el hook ya carga la página 1 al montarse). Ver PacientesPage.
+  // Un solo efecto unifica los tres filtros (búsqueda y ambos toggles) para que
+  // cada `setFilters` lleve SIEMPRE los valores vigentes: al depender de
+  // `[q, soloStockBajo, incluirInactivos]` no hay closure obsoleto (activar un
+  // toggle mientras un timeout de búsqueda estaba pendiente ya no revierte los
+  // demás filtros). El debounce de 250ms sirve tanto para el tecleo como para los
+  // toggles; `setFilters` resetea a página 1 atómicamente. Se omite el primer
+  // render para no disparar un fetch redundante (el hook ya carga la página 1 al
+  // montarse). Ver PacientesPage.
   const isFirstSearch = useRef(true);
   useEffect(() => {
     if (isFirstSearch.current) {
@@ -76,11 +78,16 @@ const MedicamentosPage: React.FC = () => {
       return;
     }
     const t = setTimeout(
-      () => setFilters({ q: q.trim() || undefined, soloStockBajo: soloStockBajo || undefined }),
+      () =>
+        setFilters({
+          q: q.trim() || undefined,
+          soloStockBajo: soloStockBajo || undefined,
+          incluirInactivos: incluirInactivos || undefined,
+        }),
       250,
     );
     return () => clearTimeout(t);
-  }, [q, soloStockBajo, setFilters]);
+  }, [q, soloStockBajo, incluirInactivos, setFilters]);
 
   useEffect(() => {
     if (showModal) {
@@ -133,6 +140,16 @@ const MedicamentosPage: React.FC = () => {
     }
   };
 
+  const handleReactivar = async (m: Medicamento) => {
+    try {
+      await medicamentosService.update(m.id, { activo: true });
+      toast.success('Medicamento reactivado');
+      reload();
+    } catch {
+      toast.error('Error al reactivar');
+    }
+  };
+
   return (
     <>
       <ListPage
@@ -166,6 +183,14 @@ const MedicamentosPage: React.FC = () => {
               aria-pressed={soloStockBajo}
             >
               Solo stock bajo
+            </Button>
+            <Button
+              type="button"
+              variant={incluirInactivos ? 'primary' : 'default'}
+              onClick={() => setIncluirInactivos((v) => !v)}
+              aria-pressed={incluirInactivos}
+            >
+              Incluir inactivos
             </Button>
           </FilterBar>
         }
@@ -216,9 +241,15 @@ const MedicamentosPage: React.FC = () => {
                         >
                           <Pencil size={14} /> Editar
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeletingMedicamento(m)}>
-                          <Trash2 size={14} /> Baja
-                        </Button>
+                        {m.activo ? (
+                          <Button size="sm" variant="ghost" onClick={() => setDeletingMedicamento(m)}>
+                            <Trash2 size={14} /> Baja
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="ghost" onClick={() => handleReactivar(m)}>
+                            <Power size={14} /> Reactivar
+                          </Button>
+                        )}
                       </div>
                     </TD>
                   )}
@@ -231,11 +262,20 @@ const MedicamentosPage: React.FC = () => {
 
       <Modal
         open={showModal}
-        onOpenChange={setShowModal}
+        onOpenChange={(open) => {
+          setShowModal(open);
+          if (!open) setEditingMedicamento(null);
+        }}
         title={editingMedicamento ? 'Editar medicamento' : 'Nuevo medicamento'}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setShowModal(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowModal(false);
+                setEditingMedicamento(null);
+              }}
+            >
               Cancelar
             </Button>
             <Button type="submit" form="medicamento-form" variant="primary" disabled={saving}>

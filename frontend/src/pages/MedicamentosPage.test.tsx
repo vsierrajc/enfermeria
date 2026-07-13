@@ -47,3 +47,22 @@ test('al activar "Solo stock bajo" tras teclear una búsqueda, el filtro combina
     ),
   );
 });
+
+test('al activar "Incluir inactivos" tras teclear una búsqueda, el filtro combina q vigente y incluirInactivos:true', async () => {
+  const user = userEvent.setup();
+  render(
+    <AuthProvider>
+      <MedicamentosPage />
+    </AuthProvider>,
+  );
+  await waitFor(() => expect(screen.getByText('Ibuprofeno')).toBeInTheDocument());
+
+  await user.type(screen.getByLabelText(/buscar/i), 'ibu');
+  await user.click(screen.getByRole('button', { name: /incluir inactivos/i }));
+
+  await waitFor(() =>
+    expect(medicamentosService.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({ q: 'ibu', incluirInactivos: true, page: 1 }),
+    ),
+  );
+});

@@ -2,7 +2,7 @@ import api from './axios';
 import type { Medicamento, PagedResult } from '../types';
 
 export const medicamentosService = {
-  findAll: async (params?: { q?: string; soloStockBajo?: boolean; page?: number; limit?: number }): Promise<PagedResult<Medicamento>> => {
+  findAll: async (params?: { q?: string; soloStockBajo?: boolean; incluirInactivos?: boolean; page?: number; limit?: number }): Promise<PagedResult<Medicamento>> => {
     const { data } = await api.get('/medicamentos', { params });
     return data.data;
   },

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { cn } from '../lib/cn';
 import { Input } from '../ui/Input';
@@ -19,6 +19,9 @@ export function SearchSelect<T>({ value, onChange, fetcher, getLabel, getKey, pl
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const blurTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const instanceId = useId();
+  const listboxId = `ss-listbox-${instanceId}`;
+  const getOptionId = (index: number) => `ss-opt-${instanceId}-${index}`;
 
   useEffect(() => {
     const q = query.trim();
@@ -95,9 +98,12 @@ export function SearchSelect<T>({ value, onChange, fetcher, getLabel, getKey, pl
         role="combobox"
         aria-expanded={open}
         aria-autocomplete="list"
+        aria-controls={listboxId}
+        aria-activedescendant={open && activeIndex >= 0 ? getOptionId(activeIndex) : undefined}
       />
       {open && items.length > 0 && (
         <ul
+          id={listboxId}
           role="listbox"
           className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-border bg-surface shadow"
         >
@@ -106,6 +112,7 @@ export function SearchSelect<T>({ value, onChange, fetcher, getLabel, getKey, pl
             return (
               <li key={getKey(item)}>
                 <button
+                  id={getOptionId(index)}
                   type="button"
                   role="option"
                   aria-selected={isActive}

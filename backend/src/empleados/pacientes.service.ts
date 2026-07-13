@@ -2,12 +2,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePacienteDto, UpdatePacienteDto } from './dto/paciente.dto';
 import { safeUserSelect } from '../common/prisma/user-select';
+import { resolvePage } from '../common/pagination/pagination';
 
 @Injectable()
 export class PacientesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(query?: { q?: string; departamento?: string; activo?: boolean }) {
+  async findAll(query?: { q?: string; departamento?: string; activo?: boolean; page?: string; limit?: string }) {
     const where: any = {};
 
     if (query?.activo !== undefined) {
@@ -28,10 +29,17 @@ export class PacientesService {
       where.departamento = query.departamento;
     }
 
-    return this.prisma.paciente.findMany({
-      where,
-      orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
-    });
+    const { skip, take, page, pageSize } = resolvePage(query ?? {});
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.paciente.findMany({
+        where,
+        orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }],
+        skip,
+        take,
+      }),
+      this.prisma.paciente.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
   }
 
   async findOne(id: number) {

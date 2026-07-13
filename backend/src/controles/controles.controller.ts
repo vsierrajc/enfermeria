@@ -36,12 +36,16 @@ export class ControlesController {
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
     @Query('tipo') tipo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.controlesService.findAll({
       pacienteId: pacienteId ? Number(pacienteId) : undefined,
       desde,
       hasta,
       tipo,
+      page,
+      limit,
     });
   }
 

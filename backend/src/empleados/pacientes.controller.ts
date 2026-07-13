@@ -33,8 +33,10 @@ export class PacientesController {
   findAll(
     @Query('q') q?: string,
     @Query('departamento') departamento?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.pacientesService.findAll({ q, departamento });
+    return this.pacientesService.findAll({ q, departamento, page, limit });
   }
 
   @Get(':id')

@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Receta } from '../types';
+import type { PagedResult, Receta } from '../types';
 
 export const recetasService = {
   findAll: async (params?: {
@@ -7,7 +7,9 @@ export const recetasService = {
     medicamentoId?: number;
     desde?: string;
     hasta?: string;
-  }): Promise<Receta[]> => {
+    page?: number;
+    limit?: number;
+  }): Promise<PagedResult<Receta>> => {
     const { data } = await api.get('/recetas', { params });
     return data.data;
   },

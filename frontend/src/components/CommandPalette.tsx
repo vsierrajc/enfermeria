@@ -53,9 +53,9 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     let ignore = false;
     const timer = setTimeout(() => {
       pacientesService
-        .findAll({ q })
+        .findAll({ q, limit: 8 })
         .then((result) => {
-          if (!ignore) setPacientes(result);
+          if (!ignore) setPacientes(result.items);
         })
         .catch(() => {
           if (!ignore) setPacientes([]);

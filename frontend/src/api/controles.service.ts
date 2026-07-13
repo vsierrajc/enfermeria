@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Control } from '../types';
+import type { Control, PagedResult } from '../types';
 
 export const controlesService = {
   findAll: async (params?: {
@@ -7,7 +7,9 @@ export const controlesService = {
     desde?: string;
     hasta?: string;
     tipo?: string;
-  }): Promise<Control[]> => {
+    page?: number;
+    limit?: number;
+  }): Promise<PagedResult<Control>> => {
     const { data } = await api.get('/controles', { params });
     return data.data;
   },

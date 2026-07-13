@@ -6,11 +6,12 @@ import { Textarea } from '../../ui/Textarea';
 import { Button } from '../../ui/Button';
 import { toast } from '../../ui/Toast';
 import { controlesService } from '../../api/controles.service';
-import type { Control } from '../../types';
+import { PatientPicker } from './PatientPicker';
+import type { Control, Paciente } from '../../types';
 
 type Props = {
   open: boolean;
-  pacienteId: number;
+  pacienteId?: number;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
 };
@@ -24,6 +25,7 @@ function nowLocal(): string {
 }
 
 export function NuevoControlModal({ open, pacienteId, onOpenChange, onCreated }: Props) {
+  const [pickedPaciente, setPickedPaciente] = useState<Paciente | null>(null);
   const [tipo, setTipo] = useState<Control['tipo']>('RUTINARIO');
   const [fecha, setFecha] = useState(nowLocal());
   const [presionSistolica, setPresionSistolica] = useState('');
@@ -38,6 +40,7 @@ export function NuevoControlModal({ open, pacienteId, onOpenChange, onCreated }:
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
+    setPickedPaciente(null);
     setTipo('RUTINARIO');
     setFecha(nowLocal());
     setPresionSistolica('');
@@ -57,9 +60,14 @@ export function NuevoControlModal({ open, pacienteId, onOpenChange, onCreated }:
   }, [open]);
 
   const handleSubmit = async () => {
+    const targetPacienteId = pacienteId ?? pickedPaciente?.id;
+    if (!targetPacienteId) {
+      toast.error('Selecciona un paciente');
+      return;
+    }
     setSaving(true);
     try {
-      const dto: Partial<Control> = { pacienteId, tipo, fecha };
+      const dto: Partial<Control> = { pacienteId: targetPacienteId, tipo, fecha };
       if (presionSistolica) dto.presionSistolica = Number(presionSistolica);
       if (presionDiastolica) dto.presionDiastolica = Number(presionDiastolica);
       if (temperatura) dto.temperatura = Number(temperatura);
@@ -99,6 +107,12 @@ export function NuevoControlModal({ open, pacienteId, onOpenChange, onCreated }:
       }
     >
       <div className="grid grid-cols-2 gap-3">
+        {pacienteId === undefined && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-wide text-faint font-medium">Paciente</span>
+            <PatientPicker value={pickedPaciente} onChange={setPickedPaciente} />
+          </div>
+        )}
         <Select label="Tipo" value={tipo} onChange={(e) => setTipo(e.target.value as Control['tipo'])}>
           {TIPOS.map((t) => (
             <option key={t} value={t}>

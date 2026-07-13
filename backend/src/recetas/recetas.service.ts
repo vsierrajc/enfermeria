@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRecetaDto } from './dto/receta.dto';
+import { resolvePage } from '../common/pagination/pagination';
 
 @Injectable()
 export class RecetasService {
@@ -11,6 +12,8 @@ export class RecetasService {
     medicamentoId?: number;
     desde?: string;
     hasta?: string;
+    page?: string;
+    limit?: string;
   }) {
     const where: any = {};
 
@@ -27,15 +30,22 @@ export class RecetasService {
       }
     }
 
-    return this.prisma.receta.findMany({
-      where,
-      orderBy: { fechaInicio: 'desc' },
-      include: {
-        paciente: true,
-        medicamento: true,
-        control: true,
-      },
-    });
+    const { skip, take, page, pageSize } = resolvePage(query ?? {});
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.receta.findMany({
+        where,
+        orderBy: { fechaInicio: 'desc' },
+        include: {
+          paciente: true,
+          medicamento: true,
+          control: true,
+        },
+        skip,
+        take,
+      }),
+      this.prisma.receta.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
   }
 
   async findOne(id: number) {

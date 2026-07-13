@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TipoRemision, EstadoRemision } from '@prisma/client';
 import { CreateRemisionDto, UpdateRemisionDto } from './dto/remision.dto';
 import { safeUserSelect } from '../common/prisma/user-select';
+import { resolvePage } from '../common/pagination/pagination';
 
 @Injectable()
 export class RemisionesService {
@@ -13,6 +14,8 @@ export class RemisionesService {
     estado?: string;
     desde?: string;
     hasta?: string;
+    page?: string;
+    limit?: string;
   }) {
     const where: any = {};
 
@@ -25,14 +28,21 @@ export class RemisionesService {
       if (query.hasta) where.fechaRemision.lte = new Date(query.hasta);
     }
 
-    return this.prisma.remision.findMany({
-      where,
-      orderBy: { fechaRemision: 'desc' },
-      include: {
-        paciente: true,
-        enfermera: { select: safeUserSelect },
-      },
-    });
+    const { skip, take, page, pageSize } = resolvePage(query ?? {});
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.remision.findMany({
+        where,
+        orderBy: { fechaRemision: 'desc' },
+        include: {
+          paciente: true,
+          enfermera: { select: safeUserSelect },
+        },
+        skip,
+        take,
+      }),
+      this.prisma.remision.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
   }
 
   async findOne(id: number) {

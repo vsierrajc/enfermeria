@@ -8,6 +8,9 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  role: string | null;
+  isConsulta: boolean;
+  canWrite: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,6 +53,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         isAuthenticated: !!user,
         isAdmin: user?.role === 'ADMINISTRADOR',
+        role: user?.role ?? null,
+        isConsulta: user?.role === 'CONSULTA',
+        canWrite: !!user && user.role !== 'CONSULTA',
       }}
     >
       {children}

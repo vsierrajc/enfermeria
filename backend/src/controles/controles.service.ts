@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TipoControl } from '@prisma/client';
 import { CreateControlDto, UpdateControlDto } from './dto/control.dto';
 import { safeUserSelect } from '../common/prisma/user-select';
+import { resolvePage } from '../common/pagination/pagination';
 
 @Injectable()
 export class ControlesService {
@@ -13,6 +14,8 @@ export class ControlesService {
     desde?: string;
     hasta?: string;
     tipo?: string;
+    page?: string;
+    limit?: string;
   }) {
     const where: any = {};
 
@@ -30,14 +33,21 @@ export class ControlesService {
       if (query.hasta) where.fecha.lte = new Date(query.hasta);
     }
 
-    return this.prisma.control.findMany({
-      where,
-      orderBy: { fecha: 'desc' },
-      include: {
-        paciente: true,
-        enfermera: { select: safeUserSelect },
-      },
-    });
+    const { skip, take, page, pageSize } = resolvePage(query ?? {});
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.control.findMany({
+        where,
+        orderBy: { fecha: 'desc' },
+        include: {
+          paciente: true,
+          enfermera: { select: safeUserSelect },
+        },
+        skip,
+        take,
+      }),
+      this.prisma.control.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
   }
 
   async findOne(id: number) {

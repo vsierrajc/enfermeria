@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppToaster } from './ui/Toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AppShell } from './components/AppShell';
+import { RequireRole } from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import PacientesPage from './pages/PacientesPage';
@@ -43,7 +44,14 @@ const AppRoutes: React.FC = () => {
         <Route path="medicamentos" element={<MedicamentosPage />} />
         <Route path="recetas" element={<RecetasPage />} />
         <Route path="remisiones" element={<RemisionesPage />} />
-        <Route path="enfermeras" element={<EnfermerasPage />} />
+        <Route
+          path="enfermeras"
+          element={
+            <RequireRole roles={['ADMINISTRADOR']}>
+              <EnfermerasPage />
+            </RequireRole>
+          }
+        />
         <Route path="estadisticas" element={<EstadisticasPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" />} />

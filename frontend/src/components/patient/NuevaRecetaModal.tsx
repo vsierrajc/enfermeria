@@ -8,11 +8,12 @@ import { toast } from '../../ui/Toast';
 import { recetasService } from '../../api/recetas.service';
 import { medicamentosService } from '../../api/medicamentos.service';
 import { useAuth } from '../../hooks/useAuth';
-import type { Medicamento, Receta } from '../../types';
+import { PatientPicker } from './PatientPicker';
+import type { Medicamento, Paciente, Receta } from '../../types';
 
 type Props = {
   open: boolean;
-  pacienteId: number;
+  pacienteId?: number;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
 };
@@ -23,6 +24,7 @@ function today(): string {
 
 export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: Props) {
   const { user } = useAuth();
+  const [pickedPaciente, setPickedPaciente] = useState<Paciente | null>(null);
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
   const [medicamentoId, setMedicamentoId] = useState('');
   const [dosis, setDosis] = useState('');
@@ -49,6 +51,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
   }, [open, user]);
 
   const reset = () => {
+    setPickedPaciente(null);
     setMedicamentoId('');
     setDosis('');
     setFrecuencia('');
@@ -64,6 +67,11 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
   }, [open]);
 
   const handleSubmit = async () => {
+    const targetPacienteId = pacienteId ?? pickedPaciente?.id;
+    if (!targetPacienteId) {
+      toast.error('Selecciona un paciente');
+      return;
+    }
     if (!medicamentoId || !dosis.trim() || !frecuencia.trim() || !fechaInicio || !fechaFin) {
       toast.error('Completa los campos obligatorios');
       return;
@@ -71,7 +79,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
     setSaving(true);
     try {
       const dto: Partial<Receta> = {
-        pacienteId,
+        pacienteId: targetPacienteId,
         medicamentoId: Number(medicamentoId),
         dosis,
         frecuencia,
@@ -111,6 +119,12 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
       }
     >
       <div className="grid grid-cols-2 gap-3">
+        {pacienteId === undefined && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-wide text-faint font-medium">Paciente</span>
+            <PatientPicker value={pickedPaciente} onChange={setPickedPaciente} />
+          </div>
+        )}
         <Select
           label="Medicamento"
           value={medicamentoId}

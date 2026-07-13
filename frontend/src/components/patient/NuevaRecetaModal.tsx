@@ -40,7 +40,7 @@ export function NuevaRecetaModal({ open, pacienteId, onOpenChange, onCreated }: 
     if (!open) return;
     medicamentosService
       .findAll()
-      .then(setMedicamentos)
+      .then((res) => setMedicamentos(res.items))
       .catch(() => toast.error('No se pudieron cargar los medicamentos'));
   }, [open]);
 

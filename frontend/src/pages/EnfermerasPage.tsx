@@ -17,7 +17,7 @@ const EnfermerasPage: React.FC = () => {
   const loadEnfermeras = async () => {
     try {
       const data = await enfermerasService.findAll();
-      setEnfermeras(data);
+      setEnfermeras(data.items);
     } catch (error) { toast.error('Error al cargar'); }
     finally { setLoading(false); }
   };

@@ -20,7 +20,7 @@ const MedicamentosPage: React.FC = () => {
   const loadMedicamentos = async () => {
     try {
       const data = await medicamentosService.findAll();
-      setMedicamentos(data);
+      setMedicamentos(data.items);
     } catch (error) { toast.error('Error al cargar'); }
     finally { setLoading(false); }
   };
@@ -28,7 +28,7 @@ const MedicamentosPage: React.FC = () => {
   const handleSearch = async () => {
     try {
       const data = await medicamentosService.findAll({ q: search });
-      setMedicamentos(data);
+      setMedicamentos(data.items);
     } catch (error) { toast.error('Error al buscar'); }
   };
 

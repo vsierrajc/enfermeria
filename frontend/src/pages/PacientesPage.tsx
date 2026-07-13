@@ -1,52 +1,118 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { AlertTriangle, Eye, FileDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { pacientesService } from '../api/pacientes.service';
 import { useAuth } from '../hooks/useAuth';
 import { createPdf, addHeader, addFooter, drawTable, formatDate } from '../utils/pdf';
+import { toast } from '../ui/Toast';
+import { ListPage } from '../components/list/ListPage';
+import { FilterBar } from '../components/list/FilterBar';
+import { Table, THead, TBody, TR, TH, TD } from '../ui/Table';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Badge } from '../ui/Badge';
+import { Modal } from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import type { Paciente } from '../types';
+
+const PAGE_SIZE = 20;
+
+const emptyForm = {
+  dni: '',
+  nombre: '',
+  apellido: '',
+  fechaNacimiento: '',
+  departamento: '',
+  puesto: '',
+  fechaIngreso: '',
+  alergias: '',
+  contactoEmergencia: '',
+  telefono: '',
+  email: '',
+};
 
 const PacientesPage: React.FC = () => {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [error, setError] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
   const [editingPaciente, setEditingPaciente] = useState<Paciente | null>(null);
-  const { isAdmin } = useAuth();
+  const [formData, setFormData] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [deletingPaciente, setDeletingPaciente] = useState<Paciente | null>(null);
+
+  const { canWrite } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    dni: '', nombre: '', apellido: '', fechaNacimiento: '',
-    departamento: '', puesto: '', fechaIngreso: '', alergias: '',
-    contactoEmergencia: '', telefono: '', email: '',
-  });
-
-  useEffect(() => {
-    loadPacientes();
-  }, []);
-
-  const loadPacientes = async () => {
+  const load = useCallback(async (searchQ: string, pageNum: number) => {
+    setLoading(true);
+    setError(false);
     try {
-      const data = await pacientesService.findAll();
+      const data = await pacientesService.findAll({
+        q: searchQ || undefined,
+        page: pageNum,
+        limit: PAGE_SIZE,
+      });
       setPacientes(data.items);
-    } catch (error) {
-      toast.error('Error al cargar pacientes');
+      setTotal(data.total);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSearch = async () => {
-    try {
-      const data = await pacientesService.findAll({ q: search });
-      setPacientes(data.items);
-    } catch (error) {
-      toast.error('Error al buscar');
+  // Debounce (250ms) de la búsqueda: solo actualiza `debouncedQ`.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Al cambiar el término buscado (no en el montaje inicial), vuelve a página 1.
+  const isFirstSearch = useRef(true);
+  useEffect(() => {
+    if (isFirstSearch.current) {
+      isFirstSearch.current = false;
+      return;
     }
-  };
+    setPage(1);
+  }, [debouncedQ]);
+
+  useEffect(() => {
+    load(debouncedQ, page);
+  }, [debouncedQ, page, load]);
+
+  useEffect(() => {
+    if (showModal) {
+      if (editingPaciente) {
+        setFormData({
+          dni: editingPaciente.dni,
+          nombre: editingPaciente.nombre,
+          apellido: editingPaciente.apellido,
+          fechaNacimiento: editingPaciente.fechaNacimiento?.split('T')[0] || '',
+          departamento: editingPaciente.departamento || '',
+          puesto: editingPaciente.puesto || '',
+          fechaIngreso: editingPaciente.fechaIngreso?.split('T')[0] || '',
+          alergias: editingPaciente.alergias || '',
+          contactoEmergencia: editingPaciente.contactoEmergencia || '',
+          telefono: editingPaciente.telefono || '',
+          email: editingPaciente.email || '',
+        });
+      } else {
+        setFormData(emptyForm);
+      }
+    }
+  }, [showModal, editingPaciente]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
       if (editingPaciente) {
         await pacientesService.update(editingPaciente.id, formData);
@@ -57,34 +123,24 @@ const PacientesPage: React.FC = () => {
       }
       setShowModal(false);
       setEditingPaciente(null);
-      resetForm();
-      loadPacientes();
+      load(debouncedQ, page);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error al guardar');
+      toast.error(error.response?.data?.message ?? 'Error al guardar');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleEdit = (p: Paciente) => {
-    setEditingPaciente(p);
-    setFormData({
-      dni: p.dni, nombre: p.nombre, apellido: p.apellido,
-      fechaNacimiento: p.fechaNacimiento?.split('T')[0] || '',
-      departamento: p.departamento || '', puesto: p.puesto || '',
-      fechaIngreso: p.fechaIngreso?.split('T')[0] || '',
-      alergias: p.alergias || '', contactoEmergencia: p.contactoEmergencia || '',
-      telefono: p.telefono || '', email: p.email || '',
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Está seguro de eliminar este paciente?')) return;
+  const handleDelete = async () => {
+    if (!deletingPaciente) return;
     try {
-      await pacientesService.remove(id);
-      toast.success('Paciente eliminado');
-      loadPacientes();
-    } catch (error) {
-      toast.error('Error al eliminar');
+      await pacientesService.remove(deletingPaciente.id);
+      toast.success('Paciente dado de baja');
+      load(debouncedQ, page);
+    } catch {
+      toast.error('Error al dar de baja');
+    } finally {
+      setDeletingPaciente(null);
     }
   };
 
@@ -110,146 +166,198 @@ const PacientesPage: React.FC = () => {
     toast.success('PDF generado');
   };
 
-  const resetForm = () => {
-    setFormData({
-      dni: '', nombre: '', apellido: '', fechaNacimiento: '',
-      departamento: '', puesto: '', fechaIngreso: '', alergias: '',
-      contactoEmergencia: '', telefono: '', email: '',
-    });
-  };
-
-  const inputStyle = {
-    width: '100%', padding: '10px', border: '1px solid #e2e8f0',
-    borderRadius: 6, fontSize: '0.9rem', boxSizing: 'border-box' as const,
-  };
-
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ margin: 0, color: '#2d3748' }}>Pacientes</h1>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={generatePdf} style={{ padding: '10px 20px', background: '#e53e3e', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
-            PDF
-          </button>
-          {isAdmin && (
-            <button
-              onClick={() => { resetForm(); setEditingPaciente(null); setShowModal(true); }}
-              style={{ padding: '10px 20px', background: '#4299e1', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer' }}
-            >
-              + Nuevo Paciente
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-        <input
-          placeholder="Buscar por nombre, apellido o DNI..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          style={{ ...inputStyle, maxWidth: 400 }}
-        />
-        <button onClick={handleSearch} style={{ padding: '10px 20px', background: '#edf2f7', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-          Buscar
-        </button>
-      </div>
-
-      {loading ? (
-        <p>Cargando...</p>
-      ) : (
-        <table style={{ width: '100%', background: 'white', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <thead>
-            <tr style={{ background: '#edf2f7' }}>
-              {['DNI', 'Nombre', 'Departamento', 'Puesto', 'Alergias', 'Acciones'].map((h) => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.85rem', color: '#4a5568' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+    <>
+      <ListPage
+        title="Pacientes"
+        actions={
+          <>
+            <Button variant="ghost" onClick={generatePdf}>
+              <FileDown size={16} /> PDF
+            </Button>
+            {canWrite && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setEditingPaciente(null);
+                  setShowModal(true);
+                }}
+              >
+                <Plus size={16} /> Nuevo
+              </Button>
+            )}
+          </>
+        }
+        filters={
+          <FilterBar>
+            <Input
+              label="Buscar"
+              placeholder="Nombre, apellido o DNI"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="min-w-[240px]"
+            />
+          </FilterBar>
+        }
+        loading={loading}
+        error={error}
+        onRetry={() => load(debouncedQ, page)}
+        isEmpty={!loading && !error && pacientes.length === 0}
+        emptyMessage="Sin resultados"
+        pagination={{ page, pageSize: PAGE_SIZE, total, onPageChange: setPage }}
+      >
+        <Table>
+          <THead>
+            <TR>
+              <TH>DNI</TH>
+              <TH>Nombre</TH>
+              <TH>Departamento</TH>
+              <TH>Puesto</TH>
+              <TH>Alergias</TH>
+              <TH>Acciones</TH>
+            </TR>
+          </THead>
+          <TBody>
             {pacientes.map((p) => (
-              <tr key={p.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                <td style={{ padding: '12px 16px' }}>{p.dni}</td>
-                <td style={{ padding: '12px 16px' }}>{p.nombre} {p.apellido}</td>
-                <td style={{ padding: '12px 16px' }}>{p.departamento || '-'}</td>
-                <td style={{ padding: '12px 16px' }}>{p.puesto || '-'}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  {p.alergias ? <span style={{ color: '#e53e3e', fontWeight: 600 }}>⚠️ {p.alergias}</span> : '-'}
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  <button onClick={() => navigate(`/pacientes/${p.id}`)} style={{ marginRight: 8, padding: '4px 12px', background: '#edf2f7', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-                    Ver
-                  </button>
-                  {isAdmin && (
-                    <>
-                      <button onClick={() => handleEdit(p)} style={{ marginRight: 8, padding: '4px 12px', background: '#fefcbf', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-                        Editar
-                      </button>
-                      <button onClick={() => handleDelete(p.id)} style={{ padding: '4px 12px', background: '#fed7d7', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-                        Baja
-                      </button>
-                    </>
+              <TR key={p.id}>
+                <TD className="tabular-nums">{p.dni}</TD>
+                <TD>
+                  <span>{p.nombre}</span> <span>{p.apellido}</span>
+                </TD>
+                <TD>{p.departamento || '-'}</TD>
+                <TD>{p.puesto || '-'}</TD>
+                <TD>
+                  {p.alergias ? (
+                    <Badge tone="crit" className="gap-1">
+                      <AlertTriangle size={12} /> {p.alergias}
+                    </Badge>
+                  ) : (
+                    '-'
                   )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', padding: 30, borderRadius: 12, width: 600, maxHeight: '80vh', overflow: 'auto' }}>
-            <h2 style={{ margin: '0 0 20px' }}>{editingPaciente ? 'Editar' : 'Nuevo'} Paciente</h2>
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                {[
-                  { key: 'dni', label: 'DNI', required: true },
-                  { key: 'nombre', label: 'Nombre', required: true },
-                  { key: 'apellido', label: 'Apellido', required: true },
-                  { key: 'fechaNacimiento', label: 'Fecha Nacimiento', type: 'date' },
-                  { key: 'departamento', label: 'Departamento' },
-                  { key: 'puesto', label: 'Puesto' },
-                  { key: 'fechaIngreso', label: 'Fecha Ingreso', type: 'date' },
-                  { key: 'telefono', label: 'Teléfono' },
-                  { key: 'email', label: 'Email', type: 'email' },
-                  { key: 'contactoEmergencia', label: 'Contacto Emergencia' },
-                ].map((field) => (
-                  <div key={field.key}>
-                    <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: '#4a5568' }}>
-                      {field.label} {field.required && '*'}
-                    </label>
-                    <input
-                      type={field.type || 'text'}
-                      required={field.required}
-                      value={(formData as any)[field.key]}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                      style={inputStyle}
-                    />
+                </TD>
+                <TD>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => navigate(`/pacientes/${p.id}`)}>
+                      <Eye size={14} /> Ver
+                    </Button>
+                    {canWrite && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingPaciente(p);
+                            setShowModal(true);
+                          }}
+                        >
+                          <Pencil size={14} /> Editar
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeletingPaciente(p)}>
+                          <Trash2 size={14} /> Baja
+                        </Button>
+                      </>
+                    )}
                   </div>
-                ))}
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', marginBottom: 4, fontSize: '0.85rem', color: '#4a5568' }}>Alergias</label>
-                  <textarea
-                    value={formData.alergias}
-                    onChange={(e) => setFormData({ ...formData, alergias: e.target.value })}
-                    style={{ ...inputStyle, height: 60 }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{ padding: '10px 20px', background: '#edf2f7', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-                  Cancelar
-                </button>
-                <button type="submit" style={{ padding: '10px 20px', background: '#4299e1', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-                  {editingPaciente ? 'Actualizar' : 'Crear'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                </TD>
+              </TR>
+            ))}
+          </TBody>
+        </Table>
+      </ListPage>
+
+      <Modal
+        open={showModal}
+        onOpenChange={setShowModal}
+        title={editingPaciente ? 'Editar paciente' : 'Nuevo paciente'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="paciente-form" variant="primary" disabled={saving}>
+              {editingPaciente ? 'Actualizar' : 'Crear'}
+            </Button>
+          </>
+        }
+      >
+        <form id="paciente-form" onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+          <Input
+            label="DNI"
+            required
+            value={formData.dni}
+            onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+          />
+          <Input
+            label="Nombre"
+            required
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+          />
+          <Input
+            label="Apellido"
+            required
+            value={formData.apellido}
+            onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+          />
+          <Input
+            label="Fecha nacimiento"
+            type="date"
+            value={formData.fechaNacimiento}
+            onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })}
+          />
+          <Input
+            label="Departamento"
+            value={formData.departamento}
+            onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
+          />
+          <Input
+            label="Puesto"
+            value={formData.puesto}
+            onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
+          />
+          <Input
+            label="Fecha ingreso"
+            type="date"
+            value={formData.fechaIngreso}
+            onChange={(e) => setFormData({ ...formData, fechaIngreso: e.target.value })}
+          />
+          <Input
+            label="Teléfono"
+            value={formData.telefono}
+            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          />
+          <Input
+            label="Contacto emergencia"
+            value={formData.contactoEmergencia}
+            onChange={(e) => setFormData({ ...formData, contactoEmergencia: e.target.value })}
+          />
+          <Textarea
+            label="Alergias"
+            value={formData.alergias}
+            onChange={(e) => setFormData({ ...formData, alergias: e.target.value })}
+            className="col-span-2"
+          />
+        </form>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deletingPaciente}
+        onOpenChange={(open) => !open && setDeletingPaciente(null)}
+        title="Dar de baja paciente"
+        description={
+          deletingPaciente ? `¿Confirmas dar de baja a ${deletingPaciente.nombre} ${deletingPaciente.apellido}?` : undefined
+        }
+        confirmLabel="Dar de baja"
+        onConfirm={handleDelete}
+        destructive
+      />
+    </>
   );
 };
 

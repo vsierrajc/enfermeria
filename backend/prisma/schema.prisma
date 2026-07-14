@@ -50,6 +50,15 @@ enum TipoRemision {
   OTRO
 }
 
+enum TipoDocumento {
+  CC
+  CE
+  TI
+  PA
+  RC
+  PPT
+}
+
 model RoleEntity {
   id        Int      @id @default(autoincrement())
   nombre    String   @unique @db.VarChar(50)
@@ -79,7 +88,8 @@ model User {
 
 model Paciente {
   id                Int       @id @default(autoincrement())
-  dni               String    @unique @db.VarChar(20)
+  tipoDocumento     TipoDocumento @default(CC) @map("tipo_documento")
+  numeroDocumento   String    @unique @db.VarChar(20) @map("numero_documento")
   nombre            String    @db.VarChar(255)
   apellido          String    @db.VarChar(255)
   fechaNacimiento   DateTime? @map("fecha_nacimiento")

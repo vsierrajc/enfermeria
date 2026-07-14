@@ -91,10 +91,10 @@ async function main() {
   // Create patients
   const patients = await Promise.all([
     prisma.paciente.upsert({
-      where: { dni: '12345678' },
+      where: { numeroDocumento: '12345678' },
       update: {},
       create: {
-        dni: '12345678',
+        numeroDocumento: '12345678',
         nombre: 'Juan',
         apellido: 'Pérez',
         fechaNacimiento: new Date('1985-05-10'),
@@ -108,10 +108,10 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '87654321' },
+      where: { numeroDocumento: '87654321' },
       update: {},
       create: {
-        dni: '87654321',
+        numeroDocumento: '87654321',
         nombre: 'María',
         apellido: 'Gómez',
         fechaNacimiento: new Date('1990-11-22'),
@@ -123,10 +123,10 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '98765432' },
+      where: { numeroDocumento: '98765432' },
       update: {},
       create: {
-        dni: '98765432',
+        numeroDocumento: '98765432',
         nombre: 'Pedro',
         apellido: 'Martínez',
         fechaNacimiento: new Date('1978-01-01'),
@@ -140,10 +140,10 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '11223344' },
+      where: { numeroDocumento: '11223344' },
       update: {},
       create: {
-        dni: '11223344',
+        numeroDocumento: '11223344',
         nombre: 'Laura',
         apellido: 'García',
         fechaNacimiento: new Date('1992-08-14'),
@@ -155,10 +155,10 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '55667788' },
+      where: { numeroDocumento: '55667788' },
       update: {},
       create: {
-        dni: '55667788',
+        numeroDocumento: '55667788',
         nombre: 'Carlos',
         apellido: 'López',
         fechaNacimiento: new Date('1980-03-25'),

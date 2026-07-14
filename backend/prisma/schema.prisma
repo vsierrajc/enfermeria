@@ -59,6 +59,12 @@ enum TipoDocumento {
   PPT
 }
 
+enum Sexo {
+  M
+  F
+  I
+}
+
 model RoleEntity {
   id        Int      @id @default(autoincrement())
   nombre    String   @unique @db.VarChar(50)
@@ -92,9 +98,11 @@ model Paciente {
   numeroDocumento   String    @unique @db.VarChar(20) @map("numero_documento")
   nombre            String    @db.VarChar(255)
   apellido          String    @db.VarChar(255)
+  sexo              Sexo?
   fechaNacimiento   DateTime? @map("fecha_nacimiento")
   departamento      String?   @db.VarChar(255)
   puesto            String?   @db.VarChar(255)
+  centroCosto       String?   @db.VarChar(255) @map("centro_costo")
   fechaIngreso      DateTime? @map("fecha_ingreso")
   alergias          String?   @db.Text
   contactoEmergencia String?  @db.VarChar(255) @map("contacto_emergencia")

@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsBoolean, IsEmail, IsEnum, IsNotEmpty, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { TipoDocumento } from '@prisma/client';
+import { TipoDocumento, Sexo } from '@prisma/client';
 
 const toUndefinedIfEmpty = ({ value }: { value: any }) => (value === '' || value === null ? undefined : value);
 
@@ -26,6 +26,10 @@ export class CreatePacienteDto {
   @IsString()
   apellido: string;
 
+  @ApiProperty({ enum: Sexo, example: Sexo.F })
+  @IsEnum(Sexo)
+  sexo: Sexo;
+
   @ApiPropertyOptional({ example: '1985-05-10' })
   @IsOptional()
   @Transform(toUndefinedIfEmpty)
@@ -43,6 +47,12 @@ export class CreatePacienteDto {
   @Transform(toUndefinedIfEmpty)
   @IsString()
   puesto?: string;
+
+  @ApiProperty({ example: 'CC-1010' })
+  @IsNotEmpty()
+  @MaxLength(255)
+  @IsString()
+  centroCosto: string;
 
   @ApiPropertyOptional({ example: '2010-01-15' })
   @IsOptional()
@@ -101,6 +111,12 @@ export class UpdatePacienteDto {
   @IsString()
   apellido?: string;
 
+  @ApiPropertyOptional({ enum: Sexo })
+  @IsOptional()
+  @Transform(toUndefinedIfEmpty)
+  @IsEnum(Sexo)
+  sexo?: Sexo;
+
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(toUndefinedIfEmpty)
@@ -118,6 +134,13 @@ export class UpdatePacienteDto {
   @Transform(toUndefinedIfEmpty)
   @IsString()
   puesto?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Transform(toUndefinedIfEmpty)
+  @MaxLength(255)
+  @IsString()
+  centroCosto?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

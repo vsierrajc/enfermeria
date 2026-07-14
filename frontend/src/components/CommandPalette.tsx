@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { pacientesService } from '../api/pacientes.service';
 import { cn } from '../lib/cn';
+import { formatDocumento } from '../lib/documento';
 import type { Paciente } from '../types';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
@@ -136,7 +137,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                     <span className="truncate">{label}</span>
                   </span>
                   {item.type === 'paciente' && (
-                    <span className="tabular-nums text-xs text-faint">{item.paciente.dni}</span>
+                    <span className="tabular-nums text-xs text-faint">{formatDocumento(item.paciente)}</span>
                   )}
                 </button>
               </li>

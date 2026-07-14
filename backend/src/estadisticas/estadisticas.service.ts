@@ -105,12 +105,12 @@ export class EstadisticasService {
 
     const controles = await this.prisma.$queryRaw<any[]>(Prisma.sql`
       SELECT
-        MONTH(fecha) as mes,
-        COUNT(*) as cantidad
+        EXTRACT(MONTH FROM fecha)::int as mes,
+        COUNT(*)::int as cantidad
       FROM controles
-      WHERE YEAR(fecha) = ${year}
-      GROUP BY MONTH(fecha)
-      ORDER BY mes`);
+      WHERE EXTRACT(YEAR FROM fecha) = ${year}
+      GROUP BY 1
+      ORDER BY 1`);
 
     const meses = [
       'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',

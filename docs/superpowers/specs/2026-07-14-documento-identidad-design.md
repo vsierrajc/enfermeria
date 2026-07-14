@@ -47,9 +47,8 @@ Breaking change de API aceptado: backend y frontend se actualizan juntos.
 - `main.ts`: referencias a `dni` en el seed automático de arranque.
 - `scripts/sql/01-schema.sql`: tipo enum `TipoDocumento`, columna
   `numero_documento` (con su índice único) y `tipo_documento`.
-- `scripts/sql/02-seed.sql`: datos de ejemplo con las nuevas columnas.
-  (El archivo tiene cambios locales sin commitear: tocar solo lo relativo
-  al documento.)
+- `scripts/sql/02-seed.sql`: no requiere cambios (solo siembra roles y admin,
+  no pacientes).
 
 ## Frontend (React)
 

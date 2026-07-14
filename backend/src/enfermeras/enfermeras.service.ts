@@ -14,10 +14,10 @@ export class EnfermerasService {
 
     if (query?.q) {
       where.OR = [
-        { usuario: { contains: query.q } },
-        { nombre: { contains: query.q } },
-        { apellido: { contains: query.q } },
-        { matricula: { contains: query.q } },
+        { usuario: { contains: query.q, mode: 'insensitive' } },
+        { nombre: { contains: query.q, mode: 'insensitive' } },
+        { apellido: { contains: query.q, mode: 'insensitive' } },
+        { matricula: { contains: query.q, mode: 'insensitive' } },
       ];
     }
 

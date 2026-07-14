@@ -36,6 +36,9 @@ CREATE TYPE "EstadoRemision" AS ENUM ('PENDIENTE', 'EN_CURSO', 'FINALIZADO');
 -- CreateEnum
 CREATE TYPE "TipoRemision" AS ENUM ('ESPECIALISTA', 'EPS', 'INCAPACIDAD', 'EXAMEN_EXTERNO', 'OTRO');
 
+-- CreateEnum
+CREATE TYPE "TipoDocumento" AS ENUM ('CC', 'CE', 'TI', 'PA', 'RC', 'PPT');
+
 -- CreateTable
 CREATE TABLE "roles" (
 "id" SERIAL NOT NULL,
@@ -64,7 +67,8 @@ CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 -- CreateTable
 CREATE TABLE "pacientes" (
 "id" SERIAL NOT NULL,
-"dni" VARCHAR(20) NOT NULL,
+"tipo_documento" "TipoDocumento" NOT NULL DEFAULT 'CC',
+"numero_documento" VARCHAR(20) NOT NULL,
 "nombre" VARCHAR(255) NOT NULL,
 "apellido" VARCHAR(255) NOT NULL,
 "fecha_nacimiento" TIMESTAMP(3),
@@ -200,7 +204,7 @@ CREATE UNIQUE INDEX "users_usuario_key" ON "users"("usuario");
 CREATE UNIQUE INDEX "users_matricula_key" ON "users"("matricula");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "pacientes_dni_key" ON "pacientes"("dni");
+CREATE UNIQUE INDEX "pacientes_numero_documento_key" ON "pacientes"("numero_documento");
 
 -- CreateIndex
 CREATE INDEX "idx_controles_paciente_fecha" ON "controles"("paciente_id", "fecha");

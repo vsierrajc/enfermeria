@@ -17,9 +17,12 @@ export interface User {
   role: string;
 }
 
+export type TipoDocumento = 'CC' | 'CE' | 'TI' | 'PA' | 'RC' | 'PPT';
+
 export interface Paciente {
   id: number;
-  dni: string;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
   nombre: string;
   apellido: string;
   fechaNacimiento?: string;

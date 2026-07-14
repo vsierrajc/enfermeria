@@ -17,7 +17,7 @@ vi.spyOn(remisionesService, 'findAll').mockResolvedValue({
       estado: 'PENDIENTE',
       fechaRemision: '2026-01-10',
       enfermeraId: 1,
-      paciente: { id: 1, dni: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
+      paciente: { id: 1, tipoDocumento: 'CC', numeroDocumento: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
     } as any,
   ],
   total: 1,

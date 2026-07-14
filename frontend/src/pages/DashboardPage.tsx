@@ -16,6 +16,7 @@ import { estadisticasService } from '../api/estadisticas.service';
 import { remisionesService } from '../api/remisiones.service';
 import { medicamentosService } from '../api/medicamentos.service';
 import { controlesService } from '../api/controles.service';
+import { formatDocumento } from '../lib/documento';
 import type { Control, EstadisticasResumen, ControlesPorMes, Medicamento, PagedResult, Remision } from '../types';
 import { Card, CardBody, CardHeader } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
@@ -294,7 +295,7 @@ const DashboardPage: React.FC = () => {
               <span className="font-semibold text-text">
                 {resumen.topPaciente.nombre} {resumen.topPaciente.apellido}
               </span>{' '}
-              DNI {resumen.topPaciente.dni}
+              {formatDocumento(resumen.topPaciente)}
             </p>
           </CardBody>
         </Card>

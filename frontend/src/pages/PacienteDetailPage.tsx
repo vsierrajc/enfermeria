@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { pacientesService } from '../api/pacientes.service';
 import { createPdf, addHeader, addFooter, drawTable, drawLabelValue, formatDate } from '../utils/pdf';
+import { formatDocumento } from '../lib/documento';
 import { useTheme } from '../hooks/useTheme';
 import { Button } from '../ui/Button';
 import { Card, CardBody, CardHeader } from '../ui/Card';
@@ -89,12 +90,12 @@ const PacienteDetailPage: React.FC = () => {
   const generateHistoriaClinica = () => {
     if (!paciente) return;
     const doc = createPdf('Historia Clinica');
-    let y = addHeader(doc, 'Historia Clinica', `${paciente.nombre} ${paciente.apellido} - DNI: ${paciente.dni}`);
+    let y = addHeader(doc, 'Historia Clinica', `${paciente.nombre} ${paciente.apellido} - ${formatDocumento(paciente)}`);
 
     addFooter(doc, 1);
 
     drawLabelValue(doc, 14, y, 'Nombre:', `${paciente.nombre} ${paciente.apellido}`);
-    drawLabelValue(doc, 14, y + 5, 'DNI:', paciente.dni);
+    drawLabelValue(doc, 14, y + 5, 'Documento:', formatDocumento(paciente));
     drawLabelValue(doc, 14, y + 10, 'Fecha Nacimiento:', formatDate(paciente.fechaNacimiento));
     drawLabelValue(doc, 110, y, 'Departamento:', paciente.departamento || '-');
     drawLabelValue(doc, 110, y + 5, 'Puesto:', paciente.puesto || '-');
@@ -160,7 +161,7 @@ const PacienteDetailPage: React.FC = () => {
       y = drawTable(doc, y, [['Fecha', 'Tipo', 'Destino', 'Motivo', 'Estado']], remisionesBody);
     }
 
-    doc.save(`historia_clinica_${paciente.dni}.pdf`);
+    doc.save(`historia_clinica_${paciente.numeroDocumento}.pdf`);
     toast.success('PDF generado');
   };
 

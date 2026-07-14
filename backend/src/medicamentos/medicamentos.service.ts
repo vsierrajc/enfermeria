@@ -24,7 +24,7 @@ export class MedicamentosService {
     }
 
     if (query?.q) {
-      where.nombre = { contains: query.q };
+      where.nombre = { contains: query.q, mode: 'insensitive' };
     }
 
     if (query?.soloStockBajo) {

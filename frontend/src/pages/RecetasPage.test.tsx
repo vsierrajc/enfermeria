@@ -18,7 +18,7 @@ vi.spyOn(recetasService, 'findAll').mockResolvedValue({
       fechaInicio: '2026-01-10',
       fechaFin: '2026-01-17',
       medico: 'Dr. Ríos',
-      paciente: { id: 1, dni: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
+      paciente: { id: 1, tipoDocumento: 'CC', numeroDocumento: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
       medicamento: { id: 1, nombre: 'Acetaminofén', presentacion: 'tableta', unidad: 'mg', stock: 10, stockMinimo: 1, activo: true } as any,
     } as any,
   ],

@@ -16,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import { estadisticasService } from '../api/estadisticas.service';
+import { formatDocumento } from '../lib/documento';
 import type { EstadisticasResumen, ControlesPorMes, PresionPromedio } from '../types';
 import { Card, CardBody, CardHeader } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
@@ -276,7 +277,7 @@ const EstadisticasPage: React.FC = () => {
               <span className="font-semibold text-text">
                 {resumen.topPaciente.nombre} {resumen.topPaciente.apellido}
               </span>{' '}
-              DNI {resumen.topPaciente.dni}
+              {formatDocumento(resumen.topPaciente)}
             </p>
           </CardBody>
         </Card>

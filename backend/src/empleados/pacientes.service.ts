@@ -19,9 +19,9 @@ export class PacientesService {
 
     if (query?.q) {
       where.OR = [
-        { nombre: { contains: query.q } },
-        { apellido: { contains: query.q } },
-        { dni: { contains: query.q } },
+        { nombre: { contains: query.q, mode: 'insensitive' } },
+        { apellido: { contains: query.q, mode: 'insensitive' } },
+        { numeroDocumento: { contains: query.q, mode: 'insensitive' } },
       ];
     }
 

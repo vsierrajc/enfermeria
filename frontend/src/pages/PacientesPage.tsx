@@ -12,11 +12,13 @@ import { usePagedList } from '../components/list/usePagedList';
 import { Table, THead, TBody, TR, TH, TD } from '../ui/Table';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import type { Paciente } from '../types';
+import { formatDocumento, TIPO_DOCUMENTO_OPTIONS } from '../lib/documento';
+import type { Paciente, TipoDocumento } from '../types';
 
 const PAGE_SIZE = 20;
 
@@ -26,7 +28,8 @@ const fetchPacientes = (params: PacientesFilters & { page: number; limit: number
   pacientesService.findAll(params);
 
 const emptyForm = {
-  dni: '',
+  tipoDocumento: 'CC' as TipoDocumento,
+  numeroDocumento: '',
   nombre: '',
   apellido: '',
   fechaNacimiento: '',
@@ -86,7 +89,8 @@ const PacientesPage: React.FC = () => {
     if (showModal) {
       if (editingPaciente) {
         setFormData({
-          dni: editingPaciente.dni,
+          tipoDocumento: editingPaciente.tipoDocumento,
+          numeroDocumento: editingPaciente.numeroDocumento,
           nombre: editingPaciente.nombre,
           apellido: editingPaciente.apellido,
           fechaNacimiento: editingPaciente.fechaNacimiento?.split('T')[0] || '',
@@ -151,7 +155,7 @@ const PacientesPage: React.FC = () => {
       const y = addHeader(doc, 'Reporte de Pacientes', `Total: ${rows.length} registros`);
 
       const body = rows.map((p) => [
-        p.dni,
+        formatDocumento(p),
         `${p.nombre} ${p.apellido}`,
         p.departamento || '-',
         p.puesto || '-',
@@ -162,7 +166,7 @@ const PacientesPage: React.FC = () => {
       ]);
 
       addFooter(doc, 1);
-      drawTable(doc, y, [['DNI', 'Nombre', 'Departamento', 'Puesto', 'F. Nacimiento', 'Telefono', 'Alergias', 'Estado']], body);
+      drawTable(doc, y, [['Documento', 'Nombre', 'Departamento', 'Puesto', 'F. Nacimiento', 'Telefono', 'Alergias', 'Estado']], body);
 
       doc.save('pacientes.pdf');
       toast.success('PDF generado');
@@ -199,7 +203,7 @@ const PacientesPage: React.FC = () => {
           <FilterBar>
             <Input
               label="Buscar"
-              placeholder="Nombre, apellido o DNI"
+              placeholder="Nombre, apellido o documento"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="min-w-[240px]"
@@ -216,7 +220,7 @@ const PacientesPage: React.FC = () => {
         <Table>
           <THead>
             <TR>
-              <TH>DNI</TH>
+              <TH>Documento</TH>
               <TH>Nombre</TH>
               <TH>Departamento</TH>
               <TH>Puesto</TH>
@@ -227,7 +231,7 @@ const PacientesPage: React.FC = () => {
           <TBody>
             {pacientes.map((p) => (
               <TR key={p.id}>
-                <TD className="tabular-nums">{p.dni}</TD>
+                <TD className="tabular-nums">{formatDocumento(p)}</TD>
                 <TD>
                   <span>{p.nombre}</span> <span>{p.apellido}</span>
                 </TD>
@@ -288,11 +292,22 @@ const PacientesPage: React.FC = () => {
         }
       >
         <form id="paciente-form" onSubmit={handleSubmit} className="grid grid-cols-2 gap-3">
+          <Select
+            label="Tipo de documento"
+            value={formData.tipoDocumento}
+            onChange={(e) => setFormData({ ...formData, tipoDocumento: e.target.value as TipoDocumento })}
+          >
+            {TIPO_DOCUMENTO_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Input
-            label="DNI"
+            label="Número de documento"
             required
-            value={formData.dni}
-            onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+            value={formData.numeroDocumento}
+            onChange={(e) => setFormData({ ...formData, numeroDocumento: e.target.value })}
           />
           <Input
             label="Nombre"

@@ -14,7 +14,7 @@ vi.spyOn(controlesService, 'findAll').mockResolvedValue({
       enfermeraId: 1,
       fecha: '2026-01-10T10:00:00.000Z',
       tipo: 'RUTINARIO',
-      paciente: { id: 1, dni: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
+      paciente: { id: 1, tipoDocumento: 'CC', numeroDocumento: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any,
       enfermera: { id: 1, usuario: 'a', nombre: 'Ana', apellido: 'Ríos', role: 'ENFERMERA' } as any,
     } as any,
   ],

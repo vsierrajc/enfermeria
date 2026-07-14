@@ -12,7 +12,8 @@ vi.mock('../api/pacientes.service', () => ({
 
 const paciente: Paciente = {
   id: 1,
-  dni: '12345678',
+  tipoDocumento: 'CC',
+  numeroDocumento: '12345678',
   nombre: 'Juan',
   apellido: 'Pérez',
   fechaNacimiento: '1985-05-15',

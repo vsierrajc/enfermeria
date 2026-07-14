@@ -6,7 +6,7 @@ import PacientesPage from './PacientesPage';
 import { pacientesService } from '../api/pacientes.service';
 
 vi.spyOn(pacientesService, 'findAll').mockResolvedValue({
-  items: [{ id: 1, dni: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any],
+  items: [{ id: 1, tipoDocumento: 'CC', numeroDocumento: '123', nombre: 'Juan', apellido: 'Pérez', activo: true } as any],
   total: 1,
   page: 1,
   pageSize: 20,
@@ -38,7 +38,7 @@ test('la búsqueda con debounce consulta con la query y vuelve a página 1', asy
   renderPage();
   await waitFor(() => expect(screen.getByText('Juan')).toBeInTheDocument());
 
-  await user.type(screen.getByPlaceholderText(/nombre, apellido o dni/i), 'ana');
+  await user.type(screen.getByPlaceholderText(/nombre, apellido o documento/i), 'ana');
 
   await waitFor(() =>
     expect(pacientesService.findAll).toHaveBeenCalledWith(expect.objectContaining({ q: 'ana', page: 1 })),

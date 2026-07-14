@@ -1,6 +1,7 @@
 import { Building2, Calendar, Clock, CreditCard } from 'lucide-react';
 import { Badge } from '../../ui/Badge';
 import { calcAge } from '../../lib/format';
+import { formatDocumento } from '../../lib/documento';
 import type { Paciente } from '../../types';
 
 type Props = {
@@ -51,7 +52,7 @@ export function PatientHeader({ paciente }: Props) {
           )}
           <span className="inline-flex items-center gap-1.5">
             <CreditCard size={14} className="text-faint" />
-            DNI <span className="tabular-nums">{paciente.dni}</span>
+            <span className="tabular-nums">{formatDocumento(paciente)}</span>
           </span>
           {ingreso && (
             <span className="inline-flex items-center gap-1.5">

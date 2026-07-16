@@ -364,6 +364,39 @@ async function main() {
   ]);
   console.log('Remisiones created:', remisiones.length);
 
+  // CIE-10: cargar catálogo desde el CSV normalizado (idempotente)
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const csvPath = path.resolve(__dirname, '../../scripts/sql/data/cie10.csv');
+  const parseCsv = (text: string): string[][] => {
+    const rows: string[][] = [];
+    let field = '', row: string[] = [], q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+        else field += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c !== '\r') field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  };
+  const cieRows = parseCsv(fs.readFileSync(csvPath, 'utf8')).slice(1)
+    .filter((r) => r[0] && r[1])
+    .map((r) => ({ codigo: r[0].trim(), descripcion: r[1].trim() }));
+  const cie = await prisma.cie10.createMany({ data: cieRows, skipDuplicates: true });
+  console.log('CIE-10 sembrados:', cie.count);
+
+  // Motivos de ejemplo (el catálogo real crece con el uso)
+  const motivosDemo = ['Control de rutina', 'Dolor lumbar', 'Cefalea', 'Control de presión arterial'];
+  for (const nombre of motivosDemo) {
+    await prisma.motivo.upsert({ where: { nombre }, update: {}, create: { nombre } });
+  }
+  console.log('Motivos demo sembrados:', motivosDemo.length);
+
   console.log('Seeding completed!');
 }
 

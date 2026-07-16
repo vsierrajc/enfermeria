@@ -1,7 +1,8 @@
-import { Building2, Calendar, Clock, CreditCard } from 'lucide-react';
+import { Building2, Calendar, Clock, CreditCard, User } from 'lucide-react';
 import { Badge } from '../../ui/Badge';
 import { calcAge } from '../../lib/format';
 import { formatDocumento } from '../../lib/documento';
+import { SEXO_LABELS } from '../../lib/sexo';
 import type { Paciente } from '../../types';
 
 type Props = {
@@ -23,7 +24,7 @@ export function PatientHeader({ paciente }: Props) {
   const edad = calcAge(paciente.fechaNacimiento);
   const nacimiento = formatFecha(paciente.fechaNacimiento);
   const ingreso = formatFecha(paciente.fechaIngreso);
-  const areaCargo = [paciente.departamento, paciente.puesto].filter(Boolean).join(' · ');
+  const areaCargo = [paciente.departamento, paciente.puesto, paciente.centroCosto].filter(Boolean).join(' · ');
 
   return (
     <div className="mb-4 flex flex-wrap items-start gap-4">
@@ -54,6 +55,12 @@ export function PatientHeader({ paciente }: Props) {
             <CreditCard size={14} className="text-faint" />
             <span className="tabular-nums">{formatDocumento(paciente)}</span>
           </span>
+          {paciente.sexo && (
+            <span className="inline-flex items-center gap-1.5">
+              <User size={14} className="text-faint" />
+              {SEXO_LABELS[paciente.sexo]}
+            </span>
+          )}
           {ingreso && (
             <span className="inline-flex items-center gap-1.5">
               <Clock size={14} className="text-faint" />

@@ -19,15 +19,19 @@ export interface User {
 
 export type TipoDocumento = 'CC' | 'CE' | 'TI' | 'PA' | 'RC' | 'PPT';
 
+export type Sexo = 'M' | 'F' | 'I';
+
 export interface Paciente {
   id: number;
   tipoDocumento: TipoDocumento;
   numeroDocumento: string;
   nombre: string;
   apellido: string;
+  sexo?: Sexo;
   fechaNacimiento?: string;
   departamento?: string;
   puesto?: string;
+  centroCosto?: string;
   fechaIngreso?: string;
   alergias?: string;
   contactoEmergencia?: string;

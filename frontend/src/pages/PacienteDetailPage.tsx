@@ -16,6 +16,7 @@ import {
 import { pacientesService } from '../api/pacientes.service';
 import { createPdf, addHeader, addFooter, drawTable, drawLabelValue, formatDate } from '../utils/pdf';
 import { formatDocumento } from '../lib/documento';
+import { SEXO_LABELS } from '../lib/sexo';
 import { useTheme } from '../hooks/useTheme';
 import { Button } from '../ui/Button';
 import { Card, CardBody, CardHeader } from '../ui/Card';
@@ -100,6 +101,8 @@ const PacienteDetailPage: React.FC = () => {
     drawLabelValue(doc, 110, y, 'Departamento:', paciente.departamento || '-');
     drawLabelValue(doc, 110, y + 5, 'Puesto:', paciente.puesto || '-');
     drawLabelValue(doc, 110, y + 10, 'Telefono:', paciente.telefono || '-');
+    drawLabelValue(doc, 110, y + 15, 'Sexo:', paciente.sexo ? SEXO_LABELS[paciente.sexo] : '-');
+    drawLabelValue(doc, 110, y + 20, 'Centro de costo:', paciente.centroCosto || '-');
     drawLabelValue(doc, 14, y + 15, 'Email:', paciente.email || '-');
     drawLabelValue(doc, 14, y + 20, 'Contacto Emergencia:', paciente.contactoEmergencia || '-');
     drawLabelValue(doc, 14, y + 25, 'Alergias:', paciente.alergias || 'Ninguna');

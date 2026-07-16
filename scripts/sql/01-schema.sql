@@ -39,6 +39,9 @@ CREATE TYPE "TipoRemision" AS ENUM ('ESPECIALISTA', 'EPS', 'INCAPACIDAD', 'EXAME
 -- CreateEnum
 CREATE TYPE "TipoDocumento" AS ENUM ('CC', 'CE', 'TI', 'PA', 'RC', 'PPT');
 
+-- CreateEnum
+CREATE TYPE "Sexo" AS ENUM ('M', 'F', 'I');
+
 -- CreateTable
 CREATE TABLE "roles" (
 "id" SERIAL NOT NULL,
@@ -71,9 +74,11 @@ CREATE TABLE "pacientes" (
 "numero_documento" VARCHAR(20) NOT NULL,
 "nombre" VARCHAR(255) NOT NULL,
 "apellido" VARCHAR(255) NOT NULL,
+"sexo" "Sexo",
 "fecha_nacimiento" TIMESTAMP(3),
 "departamento" VARCHAR(255),
 "puesto" VARCHAR(255),
+"centro_costo" VARCHAR(255),
 "fecha_ingreso" TIMESTAMP(3),
 "alergias" TEXT,
 "contacto_emergencia" VARCHAR(255),

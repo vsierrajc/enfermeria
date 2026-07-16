@@ -18,7 +18,8 @@ import { Badge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { formatDocumento, TIPO_DOCUMENTO_OPTIONS } from '../lib/documento';
-import type { Paciente, TipoDocumento } from '../types';
+import { SEXO_OPTIONS } from '../lib/sexo';
+import type { Paciente, Sexo, TipoDocumento } from '../types';
 
 const PAGE_SIZE = 20;
 
@@ -32,9 +33,11 @@ const emptyForm = {
   numeroDocumento: '',
   nombre: '',
   apellido: '',
+  sexo: '' as Sexo | '',
   fechaNacimiento: '',
   departamento: '',
   puesto: '',
+  centroCosto: '',
   fechaIngreso: '',
   alergias: '',
   contactoEmergencia: '',
@@ -93,9 +96,11 @@ const PacientesPage: React.FC = () => {
           numeroDocumento: editingPaciente.numeroDocumento,
           nombre: editingPaciente.nombre,
           apellido: editingPaciente.apellido,
+          sexo: editingPaciente.sexo ?? ('' as Sexo | ''),
           fechaNacimiento: editingPaciente.fechaNacimiento?.split('T')[0] || '',
           departamento: editingPaciente.departamento || '',
           puesto: editingPaciente.puesto || '',
+          centroCosto: editingPaciente.centroCosto || '',
           fechaIngreso: editingPaciente.fechaIngreso?.split('T')[0] || '',
           alergias: editingPaciente.alergias || '',
           contactoEmergencia: editingPaciente.contactoEmergencia || '',
@@ -111,12 +116,14 @@ const PacientesPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    // `sexo` es requerido en el <Select>, por lo que en el submit real nunca es ''.
+    const payload = { ...formData, sexo: formData.sexo as Sexo };
     try {
       if (editingPaciente) {
-        await pacientesService.update(editingPaciente.id, formData);
+        await pacientesService.update(editingPaciente.id, payload);
         toast.success('Paciente actualizado');
       } else {
-        await pacientesService.create(formData);
+        await pacientesService.create(payload);
         toast.success('Paciente creado');
       }
       setShowModal(false);
@@ -321,6 +328,21 @@ const PacientesPage: React.FC = () => {
             value={formData.apellido}
             onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
           />
+          <Select
+            label="Sexo"
+            required
+            value={formData.sexo}
+            onChange={(e) => setFormData({ ...formData, sexo: e.target.value as Sexo })}
+          >
+            <option value="" disabled>
+              Seleccione…
+            </option>
+            {SEXO_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Input
             label="Fecha nacimiento"
             type="date"
@@ -336,6 +358,12 @@ const PacientesPage: React.FC = () => {
             label="Puesto"
             value={formData.puesto}
             onChange={(e) => setFormData({ ...formData, puesto: e.target.value })}
+          />
+          <Input
+            label="Centro de costo"
+            required
+            value={formData.centroCosto}
+            onChange={(e) => setFormData({ ...formData, centroCosto: e.target.value })}
           />
           <Input
             label="Fecha ingreso"

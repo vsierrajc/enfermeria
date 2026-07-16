@@ -56,7 +56,7 @@ export class PacientesService {
         },
         remisiones: {
           orderBy: { fechaRemision: 'desc' },
-          include: { enfermera: { select: safeUserSelect } },
+          include: { enfermera: { select: safeUserSelect }, cie10: true },
         },
       },
     });

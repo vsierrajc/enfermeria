@@ -4,10 +4,11 @@ import { TipoRemision, EstadoRemision } from '@prisma/client';
 import { CreateRemisionDto, UpdateRemisionDto } from './dto/remision.dto';
 import { safeUserSelect } from '../common/prisma/user-select';
 import { resolvePage } from '../common/pagination/pagination';
+import { MotivosService } from '../motivos/motivos.service';
 
 @Injectable()
 export class RemisionesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private motivos: MotivosService) {}
 
   async findAll(query?: {
     pacienteId?: number;
@@ -62,7 +63,7 @@ export class RemisionesService {
   }
 
   async create(dto: CreateRemisionDto, enfermeraId: number) {
-    return this.prisma.remision.create({
+    const remision = await this.prisma.remision.create({
       data: {
         pacienteId: dto.pacienteId,
         tipo: dto.tipo as TipoRemision,
@@ -79,6 +80,8 @@ export class RemisionesService {
         enfermera: { select: safeUserSelect },
       },
     });
+    await this.motivos.upsert(dto.motivo);
+    return remision;
   }
 
   async update(id: number, dto: UpdateRemisionDto) {

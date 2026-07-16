@@ -4,10 +4,11 @@ import { TipoControl } from '@prisma/client';
 import { CreateControlDto, UpdateControlDto } from './dto/control.dto';
 import { safeUserSelect } from '../common/prisma/user-select';
 import { resolvePage } from '../common/pagination/pagination';
+import { MotivosService } from '../motivos/motivos.service';
 
 @Injectable()
 export class ControlesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private motivos: MotivosService) {}
 
   async findAll(query?: {
     pacienteId?: number;
@@ -69,7 +70,7 @@ export class ControlesService {
   }
 
   async create(dto: CreateControlDto, enfermeraId: number) {
-    return this.prisma.control.create({
+    const control = await this.prisma.control.create({
       data: {
         pacienteId: dto.pacienteId,
         enfermeraId,
@@ -90,6 +91,8 @@ export class ControlesService {
         enfermera: { select: safeUserSelect },
       },
     });
+    await this.motivos.upsert(dto.motivo);
+    return control;
   }
 
   async update(id: number, dto: UpdateControlDto) {
@@ -98,7 +101,7 @@ export class ControlesService {
     const data: any = { ...dto };
     if (dto.fecha) data.fecha = new Date(dto.fecha);
 
-    return this.prisma.control.update({
+    const control = await this.prisma.control.update({
       where: { id },
       data,
       include: {
@@ -106,6 +109,8 @@ export class ControlesService {
         enfermera: { select: safeUserSelect },
       },
     });
+    await this.motivos.upsert(dto.motivo);
+    return control;
   }
 
   async remove(id: number) {

@@ -12,6 +12,7 @@ import { RecetasModule } from './recetas/recetas.module';
 import { RemisionesModule } from './remisiones/remisiones.module';
 import { EstadisticasModule } from './estadisticas/estadisticas.module';
 import { Cie10Module } from './cie10/cie10.module';
+import { MotivosModule } from './motivos/motivos.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -32,6 +33,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
     RemisionesModule,
     EstadisticasModule,
     Cie10Module,
+    MotivosModule,
   ],
   providers: [
     // Orden importante: rate-limit -> autenticación -> autorización.

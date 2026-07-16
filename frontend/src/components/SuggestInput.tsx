@@ -83,7 +83,7 @@ export function SuggestInput({ value, onChange, fetcher, label, placeholder, req
                   type="button"
                   role="option"
                   aria-selected={isActive}
-                  onMouseDown={(e) => { e.preventDefault(); choose(s); }}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => choose(s)}
                   onMouseEnter={() => setActiveIndex(index)}
                   className={cn(

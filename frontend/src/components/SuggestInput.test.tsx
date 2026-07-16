@@ -9,7 +9,7 @@ test('muestra sugerencias al enfocar y al elegir una emite su texto', async () =
   const input = screen.getByPlaceholderText('Motivo');
   fireEvent.focus(input);
   await waitFor(() => screen.getByText('Cefalea'));
-  fireEvent.mouseDown(screen.getByText('Cefalea'));
+  fireEvent.click(screen.getByText('Cefalea'));
   expect(current).toBe('Cefalea');
 });
 

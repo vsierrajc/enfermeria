@@ -21,6 +21,8 @@ export type TipoDocumento = 'CC' | 'CE' | 'TI' | 'PA' | 'RC' | 'PPT';
 
 export type Sexo = 'M' | 'F' | 'I';
 
+export type Cie10 = { codigo: string; descripcion: string };
+
 export interface Paciente {
   id: number;
   tipoDocumento: TipoDocumento;
@@ -115,6 +117,8 @@ export interface Remision {
   destino: string;
   motivo: string;
   diagnostico?: string;
+  cie10Codigo?: string;
+  cie10?: Cie10;
   estado: 'PENDIENTE' | 'EN_CURSO' | 'FINALIZADO';
   fechaRemision: string;
   fechaRespuesta?: string;

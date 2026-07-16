@@ -188,6 +188,7 @@ CREATE TABLE "remisiones" (
 "destino" VARCHAR(255) NOT NULL,
 "motivo" TEXT NOT NULL,
 "diagnostico" TEXT,
+"cie10_codigo" VARCHAR(10),
 "estado" "EstadoRemision" NOT NULL DEFAULT 'PENDIENTE',
 "fecha_remision" TIMESTAMP(3) NOT NULL,
 "fecha_respuesta" TIMESTAMP(3),
@@ -197,6 +198,24 @@ CREATE TABLE "remisiones" (
 "updated_at" TIMESTAMP(3) NOT NULL,
 
 CONSTRAINT "remisiones_pkey" PRIMARY KEY ("id")
+);
+
+-- Catálogo de motivos (sugerencias; sin FK, crece con el uso)
+CREATE TABLE "motivos" (
+"id" SERIAL NOT NULL,
+"nombre" VARCHAR(255) NOT NULL,
+"created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+CONSTRAINT "motivos_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "motivos_nombre_key" ON "motivos"("nombre");
+
+-- Catálogo CIE-10 (referencia oficial; cargar desde scripts/sql/data/cie10.csv)
+CREATE TABLE "cie10" (
+"codigo" VARCHAR(10) NOT NULL,
+"descripcion" VARCHAR(255) NOT NULL,
+
+CONSTRAINT "cie10_pkey" PRIMARY KEY ("codigo")
 );
 
 -- CreateIndex
@@ -244,6 +263,9 @@ CREATE INDEX "idx_remisiones_estado" ON "remisiones"("estado");
 -- CreateIndex
 CREATE INDEX "idx_remisiones_fecha" ON "remisiones"("fecha_remision");
 
+-- CreateIndex
+CREATE INDEX "idx_remisiones_cie10" ON "remisiones"("cie10_codigo");
+
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -277,5 +299,14 @@ ALTER TABLE "remisiones" ADD CONSTRAINT "remisiones_paciente_id_fkey" FOREIGN KE
 -- AddForeignKey
 ALTER TABLE "remisiones" ADD CONSTRAINT "remisiones_enfermera_id_fkey" FOREIGN KEY ("enfermera_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "remisiones"
+  ADD CONSTRAINT "remisiones_cie10_codigo_fkey"
+  FOREIGN KEY ("cie10_codigo") REFERENCES "cie10"("codigo")
+  ON DELETE RESTRICT ON UPDATE CASCADE;
+
 
 COMMIT;
+
+-- Cargar el catálogo CIE-10 tras crear las tablas:
+--   \copy "cie10" FROM 'scripts/sql/data/cie10.csv' WITH (FORMAT csv, HEADER true)

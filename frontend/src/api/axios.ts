@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+// En producción (imagen Docker) se construye con REACT_APP_API_URL="" para que
+// baseURL sea relativa (`/api`) y nginx haga proxy al backend. Usamos `??` en
+// lugar de `||` para no descartar la cadena vacía. En desarrollo, si la variable
+// no está definida, se usa el backend local.
+const API_URL = process.env.REACT_APP_API_URL ?? 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -50,6 +50,21 @@ enum TipoRemision {
   OTRO
 }
 
+enum TipoDocumento {
+  CC
+  CE
+  TI
+  PA
+  RC
+  PPT
+}
+
+enum Sexo {
+  M
+  F
+  I
+}
+
 model RoleEntity {
   id        Int      @id @default(autoincrement())
   nombre    String   @unique @db.VarChar(50)
@@ -79,12 +94,15 @@ model User {
 
 model Paciente {
   id                Int       @id @default(autoincrement())
-  dni               String    @unique @db.VarChar(20)
+  tipoDocumento     TipoDocumento @default(CC) @map("tipo_documento")
+  numeroDocumento   String    @unique @db.VarChar(20) @map("numero_documento")
   nombre            String    @db.VarChar(255)
   apellido          String    @db.VarChar(255)
+  sexo              Sexo?
   fechaNacimiento   DateTime? @map("fecha_nacimiento")
   departamento      String?   @db.VarChar(255)
   puesto            String?   @db.VarChar(255)
+  centroCosto       String?   @db.VarChar(255) @map("centro_costo")
   fechaIngreso      DateTime? @map("fecha_ingreso")
   alergias          String?   @db.Text
   contactoEmergencia String?  @db.VarChar(255) @map("contacto_emergencia")
@@ -213,6 +231,8 @@ model Remision {
   destino         String        @db.VarChar(255)
   motivo          String        @db.Text
   diagnostico     String?       @db.Text
+  cie10Codigo     String?       @map("cie10_codigo") @db.VarChar(10)
+  cie10           Cie10?        @relation(fields: [cie10Codigo], references: [codigo], onDelete: Restrict)
   estado          EstadoRemision @default(PENDIENTE)
   fechaRemision   DateTime      @map("fecha_remision")
   fechaRespuesta  DateTime?     @map("fecha_respuesta")
@@ -225,5 +245,22 @@ model Remision {
   @@index([pacienteId], map: "idx_remisiones_paciente")
   @@index([estado], map: "idx_remisiones_estado")
   @@index([fechaRemision], map: "idx_remisiones_fecha")
+  @@index([cie10Codigo], map: "idx_remisiones_cie10")
   @@map("remisiones")
+}
+
+model Motivo {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("motivos")
+}
+
+model Cie10 {
+  codigo      String     @id @db.VarChar(10)
+  descripcion String     @db.VarChar(255)
+  remisiones  Remision[]
+
+  @@map("cie10")
 }

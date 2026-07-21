@@ -1,6 +1,10 @@
+import { Stethoscope } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { Button } from '../ui/Button';
+import { Card, CardBody } from '../ui/Card';
+import { Input } from '../ui/Input';
 
 const LoginPage: React.FC = () => {
   const [usuario, setUsuario] = useState('');
@@ -19,111 +23,55 @@ const LoginPage: React.FC = () => {
       await login(usuario, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Credenciales inválidas');
+      setError(err.response?.data?.message ?? 'Credenciales inválidas');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      }}
-    >
-      <div
-        style={{
-          background: 'white',
-          padding: 40,
-          borderRadius: 12,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-          width: 400,
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#2d3748' }}>🏥 Enfermería</h1>
-          <p style={{ margin: '8px 0 0', color: '#718096' }}>Sistema de Control de Enfermería</p>
-        </div>
-
-        {error && (
-          <div
-            style={{
-              padding: '12px',
-              background: '#fed7d7',
-              color: '#c53030',
-              borderRadius: 8,
-              marginBottom: 20,
-              textAlign: 'center',
-            }}
-          >
-            {error}
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <Card className="w-full max-w-sm">
+        <CardBody className="p-8">
+          <div className="mb-7 flex flex-col items-center gap-3 text-center">
+            <div className="grid h-11 w-11 place-items-center rounded-sm bg-accent text-white">
+              <Stethoscope size={22} />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold tracking-tight text-text">Vitalis</h1>
+              <p className="mt-1 text-sm text-muted">Sistema de control de enfermería ocupacional</p>
+            </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#4a5568' }}>
-              Usuario
-            </label>
-            <input
+          {error && (
+            <div className="mb-5 rounded-sm border border-crit-soft bg-crit-soft px-3 py-2.5 text-center text-sm text-crit">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Input
+              label="Usuario"
               type="text"
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}
+              autoComplete="username"
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-              }}
             />
-          </div>
-
-          <div style={{ marginBottom: 30 }}>
-            <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#4a5568' }}>
-              Contraseña
-            </label>
-            <input
+            <Input
+              label="Contraseña"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 8,
-                fontSize: '1rem',
-                boxSizing: 'border-box',
-              }}
             />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: loading ? '#a0aec0' : '#4299e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: '1rem',
-              fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? 'Ingresando...' : 'Iniciar Sesión'}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" variant="primary" disabled={loading} className="mt-2 justify-center">
+              {loading ? 'Ingresando' : 'Iniciar sesión'}
+            </Button>
+          </form>
+        </CardBody>
+      </Card>
     </div>
   );
 };

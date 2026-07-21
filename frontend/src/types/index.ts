@@ -17,14 +17,23 @@ export interface User {
   role: string;
 }
 
+export type TipoDocumento = 'CC' | 'CE' | 'TI' | 'PA' | 'RC' | 'PPT';
+
+export type Sexo = 'M' | 'F' | 'I';
+
+export type Cie10 = { codigo: string; descripcion: string };
+
 export interface Paciente {
   id: number;
-  dni: string;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
   nombre: string;
   apellido: string;
+  sexo?: Sexo;
   fechaNacimiento?: string;
   departamento?: string;
   puesto?: string;
+  centroCosto?: string;
   fechaIngreso?: string;
   alergias?: string;
   contactoEmergencia?: string;
@@ -108,6 +117,8 @@ export interface Remision {
   destino: string;
   motivo: string;
   diagnostico?: string;
+  cie10Codigo?: string;
+  cie10?: Cie10;
   estado: 'PENDIENTE' | 'EN_CURSO' | 'FINALIZADO';
   fechaRemision: string;
   fechaRespuesta?: string;
@@ -140,6 +151,13 @@ export interface PresionPromedio {
   promedioTemperatura: string;
   promedioPulso: number;
   promedioSaturacion: number;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface Enfermera {

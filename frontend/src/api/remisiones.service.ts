@@ -1,5 +1,5 @@
 import api from './axios';
-import type { Remision } from '../types';
+import type { PagedResult, Remision } from '../types';
 
 export const remisionesService = {
   findAll: async (params?: {
@@ -7,7 +7,9 @@ export const remisionesService = {
     estado?: string;
     desde?: string;
     hasta?: string;
-  }): Promise<Remision[]> => {
+    page?: number;
+    limit?: number;
+  }): Promise<PagedResult<Remision>> => {
     const { data } = await api.get('/remisiones', { params });
     return data.data;
   },

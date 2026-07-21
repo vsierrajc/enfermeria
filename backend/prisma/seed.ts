@@ -91,12 +91,14 @@ async function main() {
   // Create patients
   const patients = await Promise.all([
     prisma.paciente.upsert({
-      where: { dni: '12345678' },
+      where: { numeroDocumento: '12345678' },
       update: {},
       create: {
-        dni: '12345678',
+        numeroDocumento: '12345678',
         nombre: 'Juan',
         apellido: 'Pérez',
+        sexo: 'M',
+        centroCosto: 'CC-VEN-01',
         fechaNacimiento: new Date('1985-05-10'),
         departamento: 'Ventas',
         puesto: 'Ejecutivo de Ventas',
@@ -108,12 +110,14 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '87654321' },
+      where: { numeroDocumento: '87654321' },
       update: {},
       create: {
-        dni: '87654321',
+        numeroDocumento: '87654321',
         nombre: 'María',
         apellido: 'Gómez',
+        sexo: 'F',
+        centroCosto: 'CC-MKT-01',
         fechaNacimiento: new Date('1990-11-22'),
         departamento: 'Marketing',
         puesto: 'Analista de Marketing',
@@ -123,12 +127,14 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '98765432' },
+      where: { numeroDocumento: '98765432' },
       update: {},
       create: {
-        dni: '98765432',
+        numeroDocumento: '98765432',
         nombre: 'Pedro',
         apellido: 'Martínez',
+        sexo: 'M',
+        centroCosto: 'CC-IT-01',
         fechaNacimiento: new Date('1978-01-01'),
         departamento: 'IT',
         puesto: 'Ingeniero de Software',
@@ -140,12 +146,14 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '11223344' },
+      where: { numeroDocumento: '11223344' },
       update: {},
       create: {
-        dni: '11223344',
+        numeroDocumento: '11223344',
         nombre: 'Laura',
         apellido: 'García',
+        sexo: 'F',
+        centroCosto: 'CC-RH-01',
         fechaNacimiento: new Date('1992-08-14'),
         departamento: 'RRHH',
         puesto: 'Generalista de RRHH',
@@ -155,12 +163,14 @@ async function main() {
       },
     }),
     prisma.paciente.upsert({
-      where: { dni: '55667788' },
+      where: { numeroDocumento: '55667788' },
       update: {},
       create: {
-        dni: '55667788',
+        numeroDocumento: '55667788',
         nombre: 'Carlos',
         apellido: 'López',
+        sexo: 'M',
+        centroCosto: 'CC-FIN-01',
         fechaNacimiento: new Date('1980-03-25'),
         departamento: 'Administración',
         puesto: 'Contador',
@@ -353,6 +363,39 @@ async function main() {
     }),
   ]);
   console.log('Remisiones created:', remisiones.length);
+
+  // CIE-10: cargar catálogo desde el CSV normalizado (idempotente)
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const csvPath = path.resolve(__dirname, '../../scripts/sql/data/cie10.csv');
+  const parseCsv = (text: string): string[][] => {
+    const rows: string[][] = [];
+    let field = '', row: string[] = [], q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+        else field += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c !== '\r') field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows;
+  };
+  const cieRows = parseCsv(fs.readFileSync(csvPath, 'utf8')).slice(1)
+    .filter((r) => r[0] && r[1])
+    .map((r) => ({ codigo: r[0].trim(), descripcion: r[1].trim() }));
+  const cie = await prisma.cie10.createMany({ data: cieRows, skipDuplicates: true });
+  console.log('CIE-10 sembrados:', cie.count);
+
+  // Motivos de ejemplo (el catálogo real crece con el uso)
+  const motivosDemo = ['Control de rutina', 'Dolor lumbar', 'Cefalea', 'Control de presión arterial'];
+  for (const nombre of motivosDemo) {
+    await prisma.motivo.upsert({ where: { nombre }, update: {}, create: { nombre } });
+  }
+  console.log('Motivos demo sembrados:', motivosDemo.length);
 
   console.log('Seeding completed!');
 }

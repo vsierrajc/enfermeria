@@ -1,154 +1,286 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import {
-  Chart as ChartJS,
-  CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, Title, Tooltip, Legend, ArcElement,
-} from 'chart.js';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+  Activity,
+  BarChart3,
+  FileText,
+  Gauge,
+  GaugeCircle,
+  HeartPulse,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
+  Send,
+  ShieldAlert,
+  Stethoscope,
+  Thermometer,
+  Users,
+} from 'lucide-react';
 import { estadisticasService } from '../api/estadisticas.service';
+import { formatDocumento } from '../lib/documento';
 import type { EstadisticasResumen, ControlesPorMes, PresionPromedio } from '../types';
+import { Card, CardBody, CardHeader } from '../ui/Card';
+import { Skeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { FilterBar } from '../components/list/FilterBar';
+import { LineChart } from '../components/charts/LineChart';
+import { DoughnutChart } from '../components/charts/DoughnutChart';
+import { BarChart } from '../components/charts/BarChart';
+import { cn } from '../lib/cn';
 
-ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, Title, Tooltip, Legend, ArcElement
-);
+type ConteoPorEtiqueta = { cantidad: number };
+
+type EstadisticasData = {
+  resumen: EstadisticasResumen;
+  controlesPorMes: ControlesPorMes[];
+  presionPromedio: PresionPromedio;
+  controlesPorTipo: ({ tipo: string } & ConteoPorEtiqueta)[];
+  remisionesPorEstado: ({ estado: string } & ConteoPorEtiqueta)[];
+};
+
+type DateRange = { desde: string; hasta: string };
+
+type Kpi = { label: string; value: number; icon: LucideIcon };
+
+function KpiCard({ kpi }: { kpi: Kpi }) {
+  const Icon = kpi.icon;
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-faint">{kpi.label}</div>
+          <div className="mt-1 text-2xl font-bold tabular-nums text-text">{kpi.value}</div>
+        </div>
+        <Icon size={22} className="text-faint" />
+      </div>
+    </Card>
+  );
+}
+
+type VitalPromedio = { label: string; value: string; unit: string; icon: LucideIcon };
+
+function VitalCard({ vital }: { vital: VitalPromedio }) {
+  const Icon = vital.icon;
+  return (
+    <div className="flex items-center gap-3 rounded-sm bg-surface-2 p-3">
+      <Icon size={18} className="shrink-0 text-accent" />
+      <div>
+        <div className="text-xs text-muted">{vital.label}</div>
+        <div className="text-lg font-semibold text-text">
+          <span className="tabular-nums">{vital.value}</span>{' '}
+          <span className="text-xs font-normal text-muted">{vital.unit}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const EstadisticasPage: React.FC = () => {
-  const [resumen, setResumen] = useState<EstadisticasResumen | null>(null);
-  const [controlesPorMes, setControlesPorMes] = useState<ControlesPorMes[]>([]);
-  const [presionPromedio, setPresionPromedio] = useState<PresionPromedio | null>(null);
-  const [controlesPorTipo, setControlesPorTipo] = useState<{ tipo: string; cantidad: number }[]>([]);
-  const [remisionesPorEstado, setRemisionesPorEstado] = useState<{ estado: string; cantidad: number }[]>([]);
+  const [data, setData] = useState<EstadisticasData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({ desde: '', hasta: '' });
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>({ desde: '', hasta: '' });
 
-  useEffect(() => { loadAll(); }, []);
-
-  const loadAll = async () => {
+  const loadData = useCallback(async (range: DateRange, isRefresh: boolean) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(false);
     try {
-      const params: any = {};
-      if (dateRange.desde) params.desde = dateRange.desde;
-      if (dateRange.hasta) params.hasta = dateRange.hasta;
+      const params: { desde?: string; hasta?: string } = {};
+      if (range.desde) params.desde = range.desde;
+      if (range.hasta) params.hasta = range.hasta;
 
-      const [r, m, p, t, re] = await Promise.all([
-        estadisticasService.getResumen(params),
-        estadisticasService.getControlesPorMes(),
-        estadisticasService.getPresionPromedio(params),
-        estadisticasService.getControlesPorTipo(),
-        estadisticasService.getRemisionesPorEstado(),
-      ]);
-      setResumen(r);
-      setControlesPorMes(m);
-      setPresionPromedio(p);
-      setControlesPorTipo(t);
-      setRemisionesPorEstado(re);
-    } catch (error) {
-      console.error(error);
-    } finally { setLoading(false); }
+      const [resumen, controlesPorMes, presionPromedio, controlesPorTipo, remisionesPorEstado] =
+        await Promise.all([
+          estadisticasService.getResumen(params),
+          estadisticasService.getControlesPorMes(),
+          estadisticasService.getPresionPromedio(params),
+          estadisticasService.getControlesPorTipo(),
+          estadisticasService.getRemisionesPorEstado(),
+        ]);
+      setData({ resumen, controlesPorMes, presionPromedio, controlesPorTipo, remisionesPorEstado });
+    } catch {
+      setError(true);
+    } finally {
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData(dateRange, false);
+    // Solo la carga inicial dispara el skeleton de pagina completa; el filtro
+    // de rango se aplica manualmente via el boton "Filtrar" (ver handleFilter).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleFilter = () => {
+    loadData(dateRange, true);
   };
 
-  const handleFilter = () => { loadAll(); };
-
-  const tipoColors = ['#4299e1', '#48bb78', '#ed8936', '#e53e3e', '#9f7aea'];
-  const estadoColors: Record<string, string> = {
-    PENDIENTE: '#ed8936', EN_CURSO: '#4299e1', FINALIZADO: '#48bb78',
+  const handleRetry = () => {
+    loadData(dateRange, false);
   };
 
-  if (loading) return <p>Cargando...</p>;
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <Skeleton className="h-72 w-full" />
+          <Skeleton className="h-72 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <EmptyState
+        icon={ShieldAlert}
+        title="No se pudieron cargar las estadisticas"
+        description="Verifica tu conexion e intenta de nuevo."
+        action={<Button onClick={handleRetry}>Reintentar</Button>}
+      />
+    );
+  }
+
+  const { resumen, controlesPorMes, presionPromedio, controlesPorTipo, remisionesPorEstado } = data;
+
+  const kpis: Kpi[] = [
+    { label: 'Pacientes', value: resumen.totalPacientes, icon: Users },
+    { label: 'Controles', value: resumen.totalControles, icon: Stethoscope },
+    { label: 'Recetas', value: resumen.totalRecetas, icon: FileText },
+    { label: 'Remisiones', value: resumen.totalRemisiones, icon: Send },
+  ];
+
+  const vitales: VitalPromedio[] = [
+    { label: 'PA sistolica', value: `${presionPromedio.promedioSistolica}`, unit: 'mmHg', icon: Gauge },
+    { label: 'PA diastolica', value: `${presionPromedio.promedioDiastolica}`, unit: 'mmHg', icon: GaugeCircle },
+    { label: 'Frecuencia cardiaca', value: `${presionPromedio.promedioPulso}`, unit: 'lpm', icon: HeartPulse },
+    { label: 'Temperatura', value: `${presionPromedio.promedioTemperatura}`, unit: '°C', icon: Thermometer },
+    { label: 'Saturacion O2', value: `${presionPromedio.promedioSaturacion}`, unit: '%', icon: Activity },
+  ];
 
   return (
-    <div>
-      <h1 style={{ margin: '0 0 24px', color: '#2d3748' }}>Estadísticas</h1>
+    <div className={cn('flex flex-col gap-6', refreshing && 'opacity-75 transition-opacity')}>
+      <h1 className="text-xl font-semibold text-text">Estadisticas</h1>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 30, alignItems: 'center' }}>
-        <input type="date" value={dateRange.desde} onChange={(e) => setDateRange({ ...dateRange, desde: e.target.value })}
-          style={{ padding: '10px', border: '1px solid #e2e8f0', borderRadius: 6 }} />
-        <span>a</span>
-        <input type="date" value={dateRange.hasta} onChange={(e) => setDateRange({ ...dateRange, hasta: e.target.value })}
-          style={{ padding: '10px', border: '1px solid #e2e8f0', borderRadius: 6 }} />
-        <button onClick={handleFilter} style={{ padding: '10px 20px', background: '#4299e1', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
+      <FilterBar>
+        <Input
+          label="Desde"
+          type="date"
+          value={dateRange.desde}
+          onChange={(e) => setDateRange({ ...dateRange, desde: e.target.value })}
+        />
+        <Input
+          label="Hasta"
+          type="date"
+          value={dateRange.hasta}
+          onChange={(e) => setDateRange({ ...dateRange, hasta: e.target.value })}
+        />
+        <Button onClick={handleFilter} disabled={refreshing}>
           Filtrar
-        </button>
-      </div>
+        </Button>
+      </FilterBar>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 30 }}>
-        {[
-          { label: 'Pacientes', value: resumen?.totalPacientes || 0, color: '#4299e1' },
-          { label: 'Controles', value: resumen?.totalControles || 0, color: '#48bb78' },
-          { label: 'Recetas', value: resumen?.totalRecetas || 0, color: '#ed8936' },
-          { label: 'Remisiones', value: resumen?.totalRemisiones || 0, color: '#9f7aea' },
-        ].map((kpi) => (
-          <div key={kpi.label} style={{ background: 'white', padding: 20, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderLeft: `4px solid ${kpi.color}` }}>
-            <div style={{ color: '#718096', fontSize: '0.85rem' }}>{kpi.label}</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#2d3748' }}>{kpi.value}</div>
-          </div>
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {kpis.map((kpi) => (
+          <KpiCard key={kpi.label} kpi={kpi} />
         ))}
-      </div>
+      </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 30 }}>
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#2d3748' }}>Controles por Mes</h3>
-          <Line
-            data={{
-              labels: controlesPorMes.map((c) => c.mes),
-              datasets: [{ label: 'Controles', data: controlesPorMes.map((c) => c.cantidad), borderColor: '#4299e1', backgroundColor: 'rgba(66,153,225,0.1)', fill: true, tension: 0.4 }],
-            }}
-            options={{ responsive: true, plugins: { legend: { display: false } } }}
-          />
-        </div>
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-text">Controles por mes</h2>
+          </CardHeader>
+          <CardBody>
+            {controlesPorMes.length > 0 ? (
+              <LineChart
+                labels={controlesPorMes.map((c) => c.mes)}
+                datasets={[{ label: 'Controles', data: controlesPorMes.map((c) => c.cantidad) }]}
+              />
+            ) : (
+              <EmptyState icon={LineChartIcon} title="Sin datos disponibles" />
+            )}
+          </CardBody>
+        </Card>
 
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#2d3748' }}>Controles por Tipo</h3>
-          <Doughnut
-            data={{
-              labels: controlesPorTipo.map((c) => c.tipo),
-              datasets: [{ data: controlesPorTipo.map((c) => c.cantidad), backgroundColor: tipoColors }],
-            }}
-            options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }}
-          />
-        </div>
-      </div>
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-text">Controles por tipo</h2>
+          </CardHeader>
+          <CardBody>
+            {controlesPorTipo.length > 0 ? (
+              <DoughnutChart
+                labels={controlesPorTipo.map((t) => t.tipo)}
+                values={controlesPorTipo.map((t) => t.cantidad)}
+              />
+            ) : (
+              <EmptyState icon={PieChartIcon} title="Sin datos disponibles" />
+            )}
+          </CardBody>
+        </Card>
+      </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 30 }}>
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#2d3748' }}>Remisiones por Estado</h3>
-          <Bar
-            data={{
-              labels: remisionesPorEstado.map((r) => r.estado),
-              datasets: [{ label: 'Remisiones', data: remisionesPorEstado.map((r) => r.cantidad), backgroundColor: remisionesPorEstado.map((r) => estadoColors[r.estado] || '#718096') }],
-            }}
-            options={{ responsive: true, plugins: { legend: { display: false } } }}
-          />
-        </div>
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-text">Remisiones por estado</h2>
+          </CardHeader>
+          <CardBody>
+            {remisionesPorEstado.length > 0 ? (
+              <BarChart
+                labels={remisionesPorEstado.map((r) => r.estado)}
+                values={remisionesPorEstado.map((r) => r.cantidad)}
+              />
+            ) : (
+              <EmptyState icon={BarChart3} title="Sin datos disponibles" />
+            )}
+          </CardBody>
+        </Card>
 
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#2d3748' }}>Promedio Signos Vitales</h3>
-          {presionPromedio && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {[
-                { label: 'PA Sistólica', value: `${presionPromedio.promedioSistolica} mmHg`, icon: '💓' },
-                { label: 'PA Diastólica', value: `${presionPromedio.promedioDiastolica} mmHg`, icon: '💓' },
-                { label: 'Temperatura', value: `${presionPromedio.promedioTemperatura}°C`, icon: '🌡️' },
-                { label: 'Pulso', value: `${presionPromedio.promedioPulso} lpm`, icon: '脈' },
-                { label: 'Saturación O2', value: `${presionPromedio.promedioSaturacion}%`, icon: '🫁' },
-              ].map((item) => (
-                <div key={item.label} style={{ padding: 12, background: '#f7fafc', borderRadius: 8 }}>
-                  <div style={{ fontSize: '0.8rem', color: '#718096' }}>{item.icon} {item.label}</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#2d3748' }}>{item.value}</div>
-                </div>
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold text-text">Promedio de signos vitales</h2>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {vitales.map((vital) => (
+                <VitalCard key={vital.label} vital={vital} />
               ))}
             </div>
-          )}
-        </div>
-      </div>
+          </CardBody>
+        </Card>
+      </section>
 
-      {resumen?.topPaciente && (
-        <div style={{ background: 'white', padding: 24, borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ margin: '0 0 12px', color: '#2d3748' }}>Paciente Más Atendido</h3>
-          <p style={{ margin: 0, color: '#4a5568' }}>
-            <strong>{resumen.topPaciente.nombre} {resumen.topPaciente.apellido}</strong> — DNI: {resumen.topPaciente.dni} — {resumen.topPaciente.departamento}
-          </p>
-        </div>
+      {resumen.topPaciente && (
+        <Card>
+          <CardBody>
+            <h2 className="text-sm font-semibold text-text">Paciente mas atendido</h2>
+            <p className="mt-1 text-sm text-muted">
+              <span className="font-semibold text-text">
+                {resumen.topPaciente.nombre} {resumen.topPaciente.apellido}
+              </span>{' '}
+              {formatDocumento(resumen.topPaciente)}
+            </p>
+          </CardBody>
+        </Card>
       )}
     </div>
   );

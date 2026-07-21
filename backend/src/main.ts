@@ -55,12 +55,12 @@ async function seedDatabase(prisma: PrismaService) {
   });
 
   const patients = [
-    { dni: '12345678', nombre: 'Juan', apellido: 'Pérez', departamento: 'Ventas', puesto: 'Ejecutivo', alergias: 'Polen', telefono: '1122334455' },
-    { dni: '87654321', nombre: 'María', apellido: 'Gómez', departamento: 'Marketing', puesto: 'Analista', telefono: '1155667788' },
-    { dni: '98765432', nombre: 'Pedro', apellido: 'Martínez', departamento: 'IT', puesto: 'Ingeniero', alergias: 'Penicilina', telefono: '1199887766' },
+    { numeroDocumento: '12345678', nombre: 'Juan', apellido: 'Pérez', sexo: 'M' as const, centroCosto: 'CC-VEN-01', departamento: 'Ventas', puesto: 'Ejecutivo', alergias: 'Polen', telefono: '1122334455' },
+    { numeroDocumento: '87654321', nombre: 'María', apellido: 'Gómez', sexo: 'F' as const, centroCosto: 'CC-MKT-01', departamento: 'Marketing', puesto: 'Analista', telefono: '1155667788' },
+    { numeroDocumento: '98765432', nombre: 'Pedro', apellido: 'Martínez', sexo: 'M' as const, centroCosto: 'CC-IT-01', departamento: 'IT', puesto: 'Ingeniero', alergias: 'Penicilina', telefono: '1199887766' },
   ];
   for (const p of patients) {
-    await prisma.paciente.upsert({ where: { dni: p.dni }, update: {}, create: p });
+    await prisma.paciente.upsert({ where: { numeroDocumento: p.numeroDocumento }, update: {}, create: p });
   }
 
   const meds = [

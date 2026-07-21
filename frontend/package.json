@@ -3,31 +3,57 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@radix-ui/react-dialog": "^1.1.19",
+    "@radix-ui/react-dropdown-menu": "^2.1.20",
+    "@radix-ui/react-tabs": "^1.1.17",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
-    "react-scripts": "5.0.1",
+    "ajv": "^8.12.0",
     "axios": "^1.6.5",
     "chart.js": "^4.4.1",
-    "react-chartjs-2": "^5.2.0",
+    "clsx": "^2.1.1",
     "date-fns": "^3.2.0",
-    "react-hot-toast": "2.4.1",
-    "lucide-react": "^0.303.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.1",
-    "typescript": "^4.9.5",
-    "ajv": "^8.12.0"
+    "lucide-react": "^0.303.0",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "2.4.1",
+    "react-router-dom": "^6.21.1",
+    "tailwind-merge": "^3.6.0",
+    "typescript": "^4.9.5"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.5.2",
+    "jsdom": "^24.1.3",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.21",
+    "vitest": "^1.6.1"
   }
 }

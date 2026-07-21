@@ -26,12 +26,16 @@ export class RemisionesController {
     @Query('estado') estado?: string,
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.remisionesService.findAll({
       pacienteId: pacienteId ? Number(pacienteId) : undefined,
       estado,
       desde,
       hasta,
+      page,
+      limit,
     });
   }
 

@@ -20,8 +20,20 @@ export class MedicamentosController {
   @Get()
   @Roles(Role.ADMINISTRADOR, Role.ENFERMERA, Role.CONSULTA)
   @ApiOperation({ summary: 'Listar medicamentos' })
-  findAll(@Query('q') q?: string) {
-    return this.medicamentosService.findAll({ q });
+  findAll(
+    @Query('q') q?: string,
+    @Query('soloStockBajo') soloStockBajo?: string,
+    @Query('incluirInactivos') incluirInactivos?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.medicamentosService.findAll({
+      q,
+      soloStockBajo: soloStockBajo === 'true',
+      incluirInactivos: incluirInactivos === 'true',
+      page,
+      limit,
+    });
   }
 
   @Get(':id')

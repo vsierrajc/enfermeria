@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { AppToaster } from './ui/Toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import Layout from './components/layout/Layout';
+import { AppShell } from './components/AppShell';
+import { RequireRole } from './components/RequireRole';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import PacientesPage from './pages/PacientesPage';
@@ -32,7 +33,7 @@ const AppRoutes: React.FC = () => {
         path="/"
         element={
           <ProtectedRoute>
-            <Layout />
+            <AppShell />
           </ProtectedRoute>
         }
       >
@@ -43,7 +44,14 @@ const AppRoutes: React.FC = () => {
         <Route path="medicamentos" element={<MedicamentosPage />} />
         <Route path="recetas" element={<RecetasPage />} />
         <Route path="remisiones" element={<RemisionesPage />} />
-        <Route path="enfermeras" element={<EnfermerasPage />} />
+        <Route
+          path="enfermeras"
+          element={
+            <RequireRole roles={['ADMINISTRADOR']}>
+              <EnfermerasPage />
+            </RequireRole>
+          }
+        />
         <Route path="estadisticas" element={<EstadisticasPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" />} />
@@ -56,7 +64,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <AuthProvider>
         <AppRoutes />
-        <Toaster position="top-right" />
+        <AppToaster />
       </AuthProvider>
     </BrowserRouter>
   );

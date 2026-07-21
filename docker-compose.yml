@@ -1,23 +1,19 @@
-version: '3.8'
-
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     container_name: enfermeria-db
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     # Expuesto solo a localhost del host, no a toda la red.
     ports:
-      - '127.0.0.1:${DB_PORT:-3306}:3306'
+      - '127.0.0.1:${DB_PORT:-5432}:5432'
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p${DB_ROOT_PASSWORD}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,12 +27,15 @@ services:
     ports:
       - '${BACKEND_PORT:-3001}:3001'
     environment:
-      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-admin}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 3001
+      # Solo en dev: crea/actualiza el esquema con `prisma db push` al arrancar.
+      # En producción esto NO se define y el esquema se crea con scripts/sql/.
+      PRISMA_DB_PUSH: 'true'
     depends_on:
       db:
         condition: service_healthy
@@ -49,8 +48,6 @@ services:
     restart: unless-stopped
     ports:
       - '${FRONTEND_PORT:-3000}:3000'
-    environment:
-      REACT_APP_API_URL: http://localhost:3001
     depends_on:
       - backend
 

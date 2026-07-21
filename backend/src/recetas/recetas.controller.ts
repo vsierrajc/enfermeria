@@ -25,12 +25,16 @@ export class RecetasController {
     @Query('medicamentoId') medicamentoId?: string,
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.recetasService.findAll({
       pacienteId: pacienteId ? Number(pacienteId) : undefined,
       medicamentoId: medicamentoId ? Number(medicamentoId) : undefined,
       desde,
       hasta,
+      page,
+      limit,
     });
   }
 

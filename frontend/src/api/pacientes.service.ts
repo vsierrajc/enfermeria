@@ -1,8 +1,13 @@
 import api from './axios';
-import type { Paciente } from '../types';
+import type { PagedResult, Paciente } from '../types';
 
 export const pacientesService = {
-  findAll: async (params?: { q?: string; departamento?: string }): Promise<Paciente[]> => {
+  findAll: async (params?: {
+    q?: string;
+    departamento?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PagedResult<Paciente>> => {
     const { data } = await api.get('/pacientes', { params });
     return data.data;
   },

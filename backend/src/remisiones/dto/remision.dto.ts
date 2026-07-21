@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -23,11 +23,12 @@ export class CreateRemisionDto {
   @IsNotEmpty()
   motivo: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'A09' })
   @IsOptional()
   @Transform(toUndefinedIfEmpty)
   @IsString()
-  diagnostico?: string;
+  @MaxLength(10)
+  cie10Codigo?: string;
 
   @ApiProperty({ example: '2024-01-15' })
   @IsString()
@@ -52,11 +53,12 @@ export class UpdateRemisionDto {
   @IsString()
   fechaRespuesta?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: 'A09' })
   @IsOptional()
   @Transform(toUndefinedIfEmpty)
   @IsString()
-  diagnostico?: string;
+  @MaxLength(10)
+  cie10Codigo?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
